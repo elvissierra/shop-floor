@@ -30,7 +30,7 @@ class Part(Base):
     __tablename__ = "parts"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True)
+    name = Column(String(50))
     department_id =  Column(Integer, ForeignKey("departments.id"))
 
     defects = relationship("Defect", back_populates="part")
@@ -51,8 +51,8 @@ class Defect(Base):
     __tablename__ = "defects"
 
     id = Column(Integer, primary_key=True)
-    title = Column(String(50), unique=True)
-    description = Column(String(255), unique=True)
+    title = Column(String(50))
+    description = Column(String(255))
     part_id = Column(Integer, ForeignKey("parts.id"))
     defect_category_id = Column(Integer, ForeignKey("defect_categories.id"))
 
