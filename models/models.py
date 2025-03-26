@@ -69,5 +69,3 @@ class Quality(Base):
     part_id = Column(Integer, ForeignKey("parts.id"))
 
     part = relationship("Part")
-
-Base.metadata.create_all(engine)
