@@ -1,24 +1,18 @@
+import strawberry
 from fastapi import FastAPI
-from models.models import User
+from strawberry.fastapi import GraphQLRouter
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "This is the start of smfing new"
+
+schema = strawberry.Schema(Query)
+graphql_app = GraphQLRouter(schema)
 app = FastAPI()
-
-
-@app.get("/")
-
-def home():
-    return {"message": "Startup"}
-
-
-@app.post("/create")
-async def create_user(username: str, department_id: int, job: str, time: int):
-    user = User(username=username, department_id=department_id, job=job, time=time)
-    session.add(user)
-    session.commit()
-    return {"instance create": user.text}
-
+app.include_router(graphql_app, prefix="/graphql")
 
 @app.get("/")
-async def get_all_users():
-    users_query = session.query(User).all()
-    return users_query
+def ping():
+    return {"ping": "has been pinged"}
