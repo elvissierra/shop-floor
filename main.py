@@ -4,9 +4,9 @@ from strawberry.fastapi import GraphQLRouter
 
 @strawberry.type
 class Query:
-    @strawberry.field
-    def hello(self) -> str:
-        return "This is the start of smfing new"
+  @strawberry.field
+  def hello(self) -> str:
+    return "Hello resolver called successfully."
 
 schema = strawberry.Schema(Query)
 graphql_app = GraphQLRouter(schema)
