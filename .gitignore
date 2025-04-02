@@ -1,3 +1,4 @@
 sf-venv
 .env
 __pycache__
+alembic
