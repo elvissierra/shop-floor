@@ -22,7 +22,7 @@ class PartsType:
     department_id: int
 
 @strawberry.type
-class UsersType:
+class UserType:
     id: int
     username: str
     department_id: int
