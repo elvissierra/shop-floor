@@ -47,6 +47,24 @@ class MutationService:
         self.db.commit()
         self.db.refresh(department)
         return department
+    
+    def update_department(self, department_id: int, data: DepartmentInput) -> Department:
+        department = self.db.query(Department).get(department_id)
+        if not department:
+            raise Exception(f"Department {department_id} not found")
+        department.title = data.title
+        department.description = data.description
+        self.db.commit()
+        self.db.refresh(department)
+        return department
+
+    def delete_department(self, department_id: int) -> bool:
+        department = self.db.query(Department).get(department_id)
+        if not department:
+            raise Exception(f"Department {department_id} not found")
+        self.db.delete(department)
+        self.db.commit()
+        return True
 
     def add_part(self, part_data: PartInput) -> Part:
         part = Part(
@@ -97,3 +115,15 @@ class QueryService:
 
     def get_all_departments(self) -> list[DepartmentType]:
         return self.db.query(Department).all()
+    
+    def get_department(self, department_id: int) -> Department:
+        department = self.db.query(Department).get(department_id)
+        if not department:
+            raise Exception("Department {department_id} not found")
+        return department
+    
+    def get_department_by_title(self, title: str) -> Department:
+        department = self.db.query(Department).filter(Department.title == title).first()
+        if not department:
+            raise Exception("Department {title} not found")
+        return department

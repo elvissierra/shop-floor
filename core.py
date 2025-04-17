@@ -42,6 +42,17 @@ class Mutation:
             title=department.title,
             description=department.description,
         )
+    
+    @strawberry.mutation
+    def update_department(self, id: int, data: DepartmentInput, info) -> DepartmentType:
+        db: Session = info.context["db"]
+        d = MutationService(db).update_department(id, data)
+        return DepartmentType(id=d.id, title=d.title, description=d.description)
+
+    @strawberry.mutation
+    def delete_department(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_department(id)
 
     @strawberry.mutation
     def add_part(self, part_data: PartInput, info) -> PartType:
@@ -108,3 +119,9 @@ class Query:
             )
             for department in departments
         ]
+
+    @strawberry.field
+    def department(self, info, id: int) -> DepartmentType:
+        db: Session = info.context["db"]
+        d = QueryService(db).get_department(id)
+        return DepartmentType(id=d.id, title=d.title, description=d.description)
