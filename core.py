@@ -1,4 +1,6 @@
+from typing import List, Optional
 import strawberry
+from sqlalchemy.orm import Session
 from schema import (
     UserType,
     DefectCategoryType,
@@ -13,7 +15,7 @@ from schema import (
     PartInput,
     QualityInput,
 )
-from controller import MutationService
+from controller import MutationService, QueryService
 
 @strawberry.type
 class Mutation:
@@ -89,3 +91,20 @@ class Mutation:
             defect_count=quality.defect_count,
             part_id=quality.part_id,
         )
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def departments(self, info) -> List[DepartmentType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        departments = service.get_all_departments()
+        return [
+            DepartmentType(
+                id=department.id,
+                title=department.title,
+                description=department.description,
+            )
+            for department in departments
+        ]

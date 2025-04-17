@@ -1,14 +1,9 @@
 import strawberry
 from fastapi import FastAPI, Depends
 from strawberry.fastapi import GraphQLRouter
-from core import Mutation
+from core import Mutation, Query
 from config.database import get_db
 
-@strawberry.type
-class Query:
-    @strawberry.field
-    def hello(self) -> str:
-        return "Hello resolver called successfully."
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 

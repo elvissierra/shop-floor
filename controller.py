@@ -3,6 +3,7 @@ from models.models import User, Department, DefectCategory, Defect, Part, Qualit
 from schema import (
     UserInput,
     DepartmentInput,
+    DepartmentType,
     DefectCategoryInput,
     DefectInput,
     PartInput,
@@ -89,3 +90,10 @@ class MutationService:
         self.db.commit()
         self.db.refresh(quality)
         return quality
+
+class QueryService:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_all_departments(self) -> list[DepartmentType]:
+        return self.db.query(Department).all()
