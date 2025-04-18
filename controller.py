@@ -2,12 +2,17 @@ from sqlalchemy.orm import Session
 from models.models import User, Department, DefectCategory, Defect, Part, Quality
 from schema import (
     UserInput,
+    UserType,
     DepartmentInput,
     DepartmentType,
     DefectCategoryInput,
+    DefectCategoryType,
     DefectInput,
+    DefectType,
     PartInput,
+    PartType,
     QualityInput,
+    QualityType,
 )
 
 class MutationService:
@@ -113,6 +118,15 @@ class QueryService:
     def __init__(self, db: Session):
         self.db = db
 
+    def get_all_users(self) -> list[UserType]:
+        return self.db.query(User).all()
+    
+    def get_user(self, user_id: int) -> User:
+        user = self.db.query(User).get(user_id)
+        if not user:
+            raise Exception("User {user_id} not found")
+        return user
+
     def get_all_departments(self) -> list[DepartmentType]:
         return self.db.query(Department).all()
     
@@ -127,3 +141,76 @@ class QueryService:
         if not department:
             raise Exception("Department {title} not found")
         return department
+    
+    def get_all_parts(self) -> list[PartType]:
+        return self.db.query(Part).all()
+
+    def get_part(self, part_id: int) -> Part:
+        part = self.db.query(Part).get(part_id)
+        if not part:
+            raise Exception("Part {part_id} not found")
+        return part
+    
+    def get_all_defect_categories(self) -> list[DefectCategoryType]:
+        return self.db.query(DefectCategory).all()
+    
+    def get_defect_category(self, defect_category_id: int) -> DefectCategory:
+        defect_category = self.db.query(DefectCategory).get(defect_category_id)
+        if not defect_category:
+            raise Exception("Defect category {defect_category_id} not found")
+        return defect_category
+    
+    def get_all_defects(self) -> list[DefectType]:
+        return self.db.query(Defect).all()
+    
+    def get_defect(self, defect_id: int) -> Defect:
+        defect = self.db.query(Defect).get(defect_id)
+        if not defect:
+            raise Exception("Defect {defect_id} not found")
+        return defect
+    
+    def get_all_qualities(self) -> list[QualityType]:
+        return self.db.query(Quality).all()
+    
+    def get_quality(self, quality_id: int) -> Quality:
+        quality = self.db.query(Quality).get(quality_id)
+        if not quality:
+            raise Exception("Quality {quality_id} not found")
+        return quality
+    
+    def get_quality_by_part_id(self, part_id: int) -> Quality:
+        quality = self.db.query(Quality).filter(Quality.part_id == part_id).first()
+        if not quality:
+            raise Exception("Quality for part {part_id} not found")
+        return quality
+
+    def get_defect_by_part_id(self, part_id: int) -> Defect:
+        defect = self.db.query(Defect).filter(Defect.part_id == part_id).first()
+        if not defect:
+            raise Exception("Defect for part {part_id} not found")
+        return defect
+
+    def get_defect_by_defect_category_id(self, defect_category_id: int) -> Defect:
+        defect = self.db.query(Defect).filter(Defect.defect_category_id == defect_category_id).first()
+        if not defect:
+            raise Exception("Defect for defect category {defect_category_id} not found")
+        return defect
+
+    def get_defect_by_department_id(self, department_id: int) -> Defect:
+        defect = self.db.query(Defect).filter(Defect.department_id == department_id).first()
+        if not defect:
+            raise Exception("Defect for department {department_id} not found")
+        return defect
+    
+    def get_defect_by_part_id_and_defect_category_id(self, part_id: int, defect_category_id: int) -> Defect:
+        defect = self.db.query(Defect).filter(Defect.part_id == part_id, Defect.defect_category_id == defect_category_id).first()
+        if not defect:
+            raise Exception("Defect for part {part_id} and defect category {defect_category_id} not found")
+        return defect
+    
+    def get_defect_by_part_id_and_department_id(self, part_id: int, department_id: int) -> Defect:
+        defect = self.db.query(Defect).filter(Defect.part_id == part_id, Defect.department_id == department_id).first()
+        if not defect:
+            raise Exception("Defect for part {part_id} and department {department_id} not found")
+        return defect
+    

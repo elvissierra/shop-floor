@@ -125,3 +125,24 @@ class Query:
         db: Session = info.context["db"]
         d = QueryService(db).get_department(id)
         return DepartmentType(id=d.id, title=d.title, description=d.description)
+    
+    @strawberry.field
+    def department_by_title(self, info, title: str) -> DepartmentType:
+        db: Session = info.context["db"]
+        d = QueryService(db).get_department_by_title(title)
+        return DepartmentType(id=d.id, title=d.title, description=d.description)
+    
+    @strawberry.field
+    def users(self, info) -> List[UserType]:
+        db: Session = info.context.get("db")
+        users = QueryService(db).get_all_users()
+        return [
+            UserType(
+                id=user.id,
+                username=user.username,
+                department_id=user.department_id,
+                job=user.job,
+                time=user.time,
+            )
+            for user in users
+        ]
