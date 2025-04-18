@@ -106,6 +106,35 @@ class Mutation:
 
 @strawberry.type
 class Query:
+    
+    @strawberry.field
+    def users(self, info) -> List[UserType]:
+        db: Session = info.context.get("db")
+        users = QueryService(db).get_all_users()
+        return [
+            UserType(
+                id=user.id,
+                username=user.username,
+                department_id=user.department_id,
+                job=user.job,
+                time=user.time,
+            )
+            for user in users
+        ]
+    
+    @strawberry.field
+    def user(self, info, id: int) -> UserType:
+        db: Session = info.context["db"]
+        user = QueryService(db).get_user(id)
+        return UserType(
+            id
+            =user.id,
+            username=user.username,
+            department_id=user.department_id,
+            job=user.job,
+            time=user.time,
+        )
+
     @strawberry.field
     def departments(self, info) -> List[DepartmentType]:
         db: Session = info.context.get("db")
@@ -123,26 +152,95 @@ class Query:
     @strawberry.field
     def department(self, info, id: int) -> DepartmentType:
         db: Session = info.context["db"]
-        d = QueryService(db).get_department(id)
-        return DepartmentType(id=d.id, title=d.title, description=d.description)
+        department = QueryService(db).get_department(id)
+        return DepartmentType(id=department.id, title=department.title, description=department.description)
     
     @strawberry.field
     def department_by_title(self, info, title: str) -> DepartmentType:
         db: Session = info.context["db"]
-        d = QueryService(db).get_department_by_title(title)
-        return DepartmentType(id=d.id, title=d.title, description=d.description)
+        department = QueryService(db).get_department_by_title(title)
+        return DepartmentType(id=department.id, title=department.title, description=department.description)
     
     @strawberry.field
-    def users(self, info) -> List[UserType]:
+    def parts(self, info) -> List[PartType]:
         db: Session = info.context.get("db")
-        users = QueryService(db).get_all_users()
+        service = QueryService(db)
+        parts = service.get_all_parts()
         return [
-            UserType(
-                id=user.id,
-                username=user.username,
-                department_id=user.department_id,
-                job=user.job,
-                time=user.time,
+            PartType(
+                id=part.id,
+                name=part.name,
+                department_id=part.department_id,
             )
-            for user in users
+                for part in parts
         ]
+    
+    @strawberry.field
+    def part(self, info, id: int) -> PartType:
+        db: Session = info.context["db"]
+        part = QueryService(db).get_part(id)
+        return PartType(id=part.id, name=part.name, department_id=part.department_id)
+    
+    @strawberry.field
+    def defect_categories(self, info) -> List[DefectCategoryType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        defect_categories = service.get_all_defect_categories()
+        return [
+            DefectCategoryType(
+                id=defect_category.id,
+                title=defect_category.title,
+                department_id=defect_category.id
+                )
+                for defect_category in defect_categories
+        ]
+    
+    @strawberry.field
+    def defect_category(self, info, id: int) -> DefectCategoryType:
+        db: Session = info.context["db"]
+        defect_category = QueryService(db).get_defect_category(id)
+        return DefectCategoryType(id=defect_category.id, title=defect_category.title, department_id=defect_category.department_id)
+    
+    @strawberry.field
+    def defects(self, info) -> List[DefectType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        defects = service.get_all_defects()
+        return [
+            DefectType(
+                id=defect.id,
+                title=defect.title,
+                description=defect.description,
+                part_id=defect.part_id,
+                defect_category_id=defect.defect_category_id,
+            )
+            for defect in defects
+        ]
+    
+    @strawberry.field
+    def defect(self, info, id: int) -> DefectType:
+        db: Session = info.context["db"]
+        defect = QueryService(db).get_defect(id)
+        return DefectType(id=defect.id, title=defect.title, description=defect.description, part_id=defect.part_id, defect_category_id=defect.defect_category_id)
+    
+    @strawberry.field
+    def qualities(self, info) -> List[QualityType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        qualities = service.get_all_qualities()
+        return [
+            QualityType(
+                id=quality.id,
+                defect_count=quality.defect_count,
+                part_id=quality.part_id,
+            )
+            for quality in qualities
+        ]
+    
+    @strawberry.field
+    def quality(self, info, id: int) -> QualityType:
+        db: Session = info.context["db"]
+        quality = QueryService(db).get_quality(id)
+        return QualityType(id=quality.id, defect_count=quality.defect_count, part_id=quality.part_id)
+    
+    
