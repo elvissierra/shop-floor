@@ -1,10 +1,12 @@
 import strawberry
 
+
 @strawberry.type
 class DepartmentType:
     id: int
     title: str
     description: str
+
 
 @strawberry.type
 class DefectCategoryType:
@@ -12,11 +14,13 @@ class DefectCategoryType:
     title: str
     department_id: int
 
+
 @strawberry.type
 class PartType:
     id: int
     name: str
     department_id: int
+
 
 @strawberry.type
 class UserType:
@@ -26,6 +30,7 @@ class UserType:
     job: str
     time: int
 
+
 @strawberry.type
 class DefectType:
     id: int
@@ -34,6 +39,7 @@ class DefectType:
     part_id: int
     defect_category_id: int
 
+
 @strawberry.type
 class QualityType:
     id: int
@@ -41,20 +47,24 @@ class QualityType:
     defect_count: int
     part_id: int
 
+
 @strawberry.input
 class DepartmentInput:
     title: str
     description: str
+
 
 @strawberry.input
 class DefectCategoryInput:
     title: str
     department_id: int
 
+
 @strawberry.input
 class PartInput:
     name: str
     department_id: int
+
 
 @strawberry.input
 class UserInput:
@@ -63,12 +73,14 @@ class UserInput:
     job: str
     time: int
 
+
 @strawberry.input
 class DefectInput:
     title: str
     description: str
     part_id: int
     defect_category_id: int
+
 
 @strawberry.input
 class QualityInput:

@@ -17,6 +17,7 @@ from schema import (
 )
 from controller import MutationService, QueryService
 
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -42,7 +43,7 @@ class Mutation:
             title=department.title,
             description=department.description,
         )
-    
+
     @strawberry.mutation
     def update_department(self, id: int, data: DepartmentInput, info) -> DepartmentType:
         db: Session = info.context["db"]
@@ -106,7 +107,7 @@ class Mutation:
 
 @strawberry.type
 class Query:
-    
+
     @strawberry.field
     def users(self, info) -> List[UserType]:
         db: Session = info.context.get("db")
@@ -121,14 +122,13 @@ class Query:
             )
             for user in users
         ]
-    
+
     @strawberry.field
     def user(self, info, id: int) -> UserType:
         db: Session = info.context["db"]
         user = QueryService(db).get_user(id)
         return UserType(
-            id
-            =user.id,
+            id=user.id,
             username=user.username,
             department_id=user.department_id,
             job=user.job,
@@ -153,14 +153,18 @@ class Query:
     def department(self, info, id: int) -> DepartmentType:
         db: Session = info.context["db"]
         department = QueryService(db).get_department(id)
-        return DepartmentType(id=department.id, title=department.title, description=department.description)
-    
+        return DepartmentType(
+            id=department.id, title=department.title, description=department.description
+        )
+
     @strawberry.field
     def department_by_title(self, info, title: str) -> DepartmentType:
         db: Session = info.context["db"]
         department = QueryService(db).get_department_by_title(title)
-        return DepartmentType(id=department.id, title=department.title, description=department.description)
-    
+        return DepartmentType(
+            id=department.id, title=department.title, description=department.description
+        )
+
     @strawberry.field
     def parts(self, info) -> List[PartType]:
         db: Session = info.context.get("db")
@@ -172,15 +176,15 @@ class Query:
                 name=part.name,
                 department_id=part.department_id,
             )
-                for part in parts
+            for part in parts
         ]
-    
+
     @strawberry.field
     def part(self, info, id: int) -> PartType:
         db: Session = info.context["db"]
         part = QueryService(db).get_part(id)
         return PartType(id=part.id, name=part.name, department_id=part.department_id)
-    
+
     @strawberry.field
     def defect_categories(self, info) -> List[DefectCategoryType]:
         db: Session = info.context.get("db")
@@ -190,17 +194,21 @@ class Query:
             DefectCategoryType(
                 id=defect_category.id,
                 title=defect_category.title,
-                department_id=defect_category.id
-                )
-                for defect_category in defect_categories
+                department_id=defect_category.id,
+            )
+            for defect_category in defect_categories
         ]
-    
+
     @strawberry.field
     def defect_category(self, info, id: int) -> DefectCategoryType:
         db: Session = info.context["db"]
         defect_category = QueryService(db).get_defect_category(id)
-        return DefectCategoryType(id=defect_category.id, title=defect_category.title, department_id=defect_category.department_id)
-    
+        return DefectCategoryType(
+            id=defect_category.id,
+            title=defect_category.title,
+            department_id=defect_category.department_id,
+        )
+
     @strawberry.field
     def defects(self, info) -> List[DefectType]:
         db: Session = info.context.get("db")
@@ -216,13 +224,19 @@ class Query:
             )
             for defect in defects
         ]
-    
+
     @strawberry.field
     def defect(self, info, id: int) -> DefectType:
         db: Session = info.context["db"]
         defect = QueryService(db).get_defect(id)
-        return DefectType(id=defect.id, title=defect.title, description=defect.description, part_id=defect.part_id, defect_category_id=defect.defect_category_id)
-    
+        return DefectType(
+            id=defect.id,
+            title=defect.title,
+            description=defect.description,
+            part_id=defect.part_id,
+            defect_category_id=defect.defect_category_id,
+        )
+
     @strawberry.field
     def qualities(self, info) -> List[QualityType]:
         db: Session = info.context.get("db")
@@ -236,11 +250,11 @@ class Query:
             )
             for quality in qualities
         ]
-    
+
     @strawberry.field
     def quality(self, info, id: int) -> QualityType:
         db: Session = info.context["db"]
         quality = QueryService(db).get_quality(id)
-        return QualityType(id=quality.id, defect_count=quality.defect_count, part_id=quality.part_id)
-    
-    
+        return QualityType(
+            id=quality.id, defect_count=quality.defect_count, part_id=quality.part_id
+        )
