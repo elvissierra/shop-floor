@@ -1,11 +1,10 @@
-# config/test_config.py
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models.models import Base
-from main import app, get_context  # make sure get_context imports get_db internally
+from main import app
 from config.database import get_db as real_get_db
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
