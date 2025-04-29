@@ -5,8 +5,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development-stage
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       - backend
     networks:
@@ -14,6 +15,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      - NODE_ENV=development
 
   backend:
     build:
