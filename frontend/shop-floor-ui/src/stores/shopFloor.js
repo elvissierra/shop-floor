@@ -33,5 +33,62 @@ export const useShopFloorStore = defineStore('shopFloor', {
         this.loading = false;
       }
     },
+
+    // Department methods
+    async fetchDepartments() {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.getDepartments();
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteDepartment(id) {
+      this.loading = true;
+      try {
+        await shopFloorService.deleteDepartment(id);
+        this.error = null;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Part methods
+    async fetchParts() {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.getParts();
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async addPart(partData) {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.addPart(partData);
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 }); 
