@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from models.models import Base
 from main import app
-from config.database import get_db as real_get_db
+from backend.app.core.database import get_db as real_get_db
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
