@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
 import ShopFloorView from '../views/ShopFloorView.vue';
 
 const router = createRouter({
@@ -7,6 +8,16 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      component: HomeView
+    },
+    {
+      path: '/departments',
+      name: 'departments',
+      component: ShopFloorView
+    },
+    {
+      path: '/parts',
+      name: 'parts',
       component: ShopFloorView
     }
   ]

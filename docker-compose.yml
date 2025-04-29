@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - shop-floor-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/shop_floor
+      - ENVIRONMENT=development
+      - API_V1_STR=/api/v1
+      - PROJECT_NAME=Shop Floor API
+      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:80"]
+    depends_on:
+      - db
+    networks:
+      - shop-floor-network
+    volumes:
+      - ./backend:/app
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=shop_floor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - shop-floor-network
+    ports:
+      - "5432:5432"
+
+networks:
+  shop-floor-network:
+    driver: bridge
+
+volumes:
+  postgres_data: 
