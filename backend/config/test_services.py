@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models.models import Base
-from controller import MutationService, QueryService
-from schema import DepartmentInput
+from backend.app.api.services import MutationService, QueryService
+from backend.app.schema import DepartmentInput
 
 @pytest.fixture
 def session():

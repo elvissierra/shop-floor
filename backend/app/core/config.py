@@ -3,6 +3,11 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database settings
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str
+    DB_PORT: str
     DATABASE_URL: str
     
     # API settings
