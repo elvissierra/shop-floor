@@ -6,7 +6,7 @@ from app.core.config import settings
 app = FastAPI(
     title="Shop Floor API",
     description="API for Shop Floor Management System",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Configure CORS
@@ -21,6 +21,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api")
 
+
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Shop Floor API"} 
+    return {"message": "Welcome to Shop Floor API"}

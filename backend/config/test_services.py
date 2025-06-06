@@ -6,6 +6,7 @@ from models.models import Base
 from backend.app.api.services import MutationService, QueryService
 from backend.app.schema import DepartmentInput
 
+
 @pytest.fixture
 def session():
     engine = create_engine("sqlite:///:memory:")
@@ -14,6 +15,7 @@ def session():
     sess = TestingSessionLocal()
     yield sess
     sess.close()
+
 
 def test_add_and_get_department(session):
     service = MutationService(session)

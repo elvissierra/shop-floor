@@ -1,5 +1,6 @@
 import strawberry
 
+
 @strawberry.type
 class DepartmentType:
     id: int
