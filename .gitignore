@@ -2,4 +2,4 @@ sf-venv
 .env
 __pycache__
 versions
-.local-remote
+.local_remote
