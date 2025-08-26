@@ -194,7 +194,7 @@ class Query:
             DefectCategoryType(
                 id=defect_category.id,
                 title=defect_category.title,
-                department_id=defect_category.id,
+                department_id=defect_category.department_id,
             )
             for defect_category in defect_categories
         ]
@@ -245,6 +245,7 @@ class Query:
         return [
             QualityType(
                 id=quality.id,
+                pass_fail=quality.pass_fail,
                 defect_count=quality.defect_count,
                 part_id=quality.part_id,
             )
