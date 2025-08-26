@@ -2,7 +2,7 @@ import strawberry
 from fastapi import FastAPI, Request
 from strawberry.fastapi import GraphQLRouter
 from backend.core import Mutation, Query
-from backend.app.core.database import get_db
+from backend.app.core.database import get_db, SessionLocal
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -19,8 +19,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def db_session_middleware(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        return response
+    finally:    
+        db = getattr(request.state, "db", None)
+        if db is not None:
+            db.close()
+
+
 async def get_context(request: Request):
-    db = next(get_db())
+    db = SessionLocal()
+    request.state.db = db
     return {"db": db}
 
 
