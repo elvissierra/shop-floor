@@ -1,19 +1,20 @@
 import strawberry
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Request
 from strawberry.fastapi import GraphQLRouter
-from core import Mutation, Query
+from backend.core import Mutation, Query
 from backend.app.core.database import get_db
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
+app = FastAPI()
 
-def get_context(db=Depends(get_db)):
+async def get_context(request: Request):
+    db = next(get_db())
     return {"db": db}
 
 
 graphql_app = GraphQLRouter(schema, context_getter=get_context)
-app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
 
 
