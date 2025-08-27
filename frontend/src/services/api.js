@@ -1,11 +1,6 @@
 // GraphQL service (replaces REST) — no extra deps required
 
-const API_URL =
-  (typeof import !== 'undefined' &&
-    import.meta &&
-    import.meta.env &&
-    import.meta.env.VITE_API_URL) ||
-  'http://localhost:8000/graphql';
+const API_URL = import.meta?.env?.VITE_API_URL ?? 'http://localhost:8000/graphql';
 
 async function gql(query, variables = {}) {
   const res = await fetch(API_URL, {
