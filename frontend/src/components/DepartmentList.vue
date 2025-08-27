@@ -1,3 +1,6 @@
+
+// store needs to be reconfigured to use Gql// store now uses GraphQL service
+
 <template>
   <div class="department-list">
     <h2>Departments</h2>

@@ -1,3 +1,6 @@
+
+// store now uses GraphQL service
+
 <template>
   <div class="part-list">
     <h2>Parts</h2>

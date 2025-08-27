@@ -1,3 +1,6 @@
+
+// store now uses GraphQL service
+
 <template>
   <div class="home">
     <div class="hero">

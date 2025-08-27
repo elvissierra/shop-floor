@@ -257,5 +257,8 @@ class Query:
         db: Session = info.context["db"]
         quality = QueryService(db).get_quality(id)
         return QualityType(
-            id=quality.id, defect_count=quality.defect_count, part_id=quality.part_id
+            id=quality.id,
+            pass_fail=quality.pass_fail,
+            defect_count=quality.defect_count,
+            part_id=quality.part_id,
         )

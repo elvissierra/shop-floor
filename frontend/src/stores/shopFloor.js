@@ -1,3 +1,6 @@
+
+// Store now uses GraphQL service under services/api.js (fetch to /graphql).
+
 import { defineStore } from 'pinia';
 import { shopFloorService } from '../services/api';
 

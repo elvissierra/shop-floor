@@ -2,7 +2,7 @@ import strawberry
 from fastapi import FastAPI, Request
 from strawberry.fastapi import GraphQLRouter
 from backend.core import Mutation, Query
-from backend.app.core.database import get_db, SessionLocal
+from backend.app.core.database import SessionLocal
 from fastapi.middleware.cors import CORSMiddleware
 
 
