@@ -34,10 +34,6 @@ services:
   db:
     image: postgres:14-alpine
     container_name: shopfloor_db
-    environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
     env_file:
       - ./backend/db.env
     ports:
