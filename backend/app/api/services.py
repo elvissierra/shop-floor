@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from backend.models.models import User, Department, DefectCategory, Defect, Part, Quality
-from backend.app.schema import (
+from models.models import User, Department, DefectCategory, Defect, Part, Quality
+from app.schema import (
     UserInput,
     UserType,
     DepartmentInput,

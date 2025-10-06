@@ -1,0 +1,128 @@
+Tracking management system
+# 🏭 Shop Floor — Tracking Management System
+
+## 📘 Overview
+**Shop Floor** is a production‑level tracking management system designed for manufacturing and process environments.  
+It manages **Departments**, **Parts**, **Defect Categories**, **Defects**, **Quality checks**, and **Users**, providing a single hub to monitor and improve shop‑floor operations.
+
+The system enables engineering and quality teams to identify defects, log issues, and maintain visibility across departments, parts, and product lines.
+
+---
+
+## 🧠 Architecture Summary
+
+### Backend — FastAPI + Strawberry GraphQL + SQLAlchemy + PostgreSQL
+- **FastAPI** powers the API layer.
+- **Strawberry GraphQL** exposes a unified query/mutation schema.
+- **SQLAlchemy ORM** handles relational mapping and queries.
+- **PostgreSQL** stores all persistent data.
+
+### Frontend — Vue.js + Vuetify
+- Lightweight web UI for interacting with the backend through GraphQL.
+- Containerized for deployment but optional for local development.
+
+### Containerization — Docker Compose
+- Orchestrates three services:
+  - `shop_floor` (FastAPI backend)
+  - `db` (Postgres database)
+  - `sf_ui` (Vue frontend)
+- Configurable via `.env` files with support for environment separation (`app.env` / `db.env`).
+
+---
+
+## ⚙️ Environment Configuration
+
+### 1️⃣ `backend/app.env`
+For the **backend** container:
+```
+DATABASE_URL=postgresql+psycopg://sf_user:shopfloor_pass@db:5432/shopfloor_db
+BACKEND_CORS_ORIGINS=["http://localhost","http://127.0.0.1","http://localhost:5173","http://127.0.0.1:5173"]
+TRUSTED_HOSTS=["localhost","127.0.0.1"]
+```
+
+### 2️⃣ `backend/db.env`
+For the **database** container:
+```
+POSTGRES_DB=shopfloor_db
+POSTGRES_USER=sf_user
+POSTGRES_PASSWORD=shopfloor_pass
+```
+
+---
+
+## 🐳 Docker Compose Workflow
+
+### Build and Run
+```bash
+docker compose down -v        # Clean up old containers and volumes
+docker compose up --build     # Build and start all services
+```
+
+### Service Summary
+| Service | Description | Port |
+|----------|--------------|------|
+| shop_floor | FastAPI + Strawberry backend | 8000 |
+| db | PostgreSQL database | 5432 |
+| sf_ui | Vue.js frontend | 80 (or 5173 in dev) |
+
+### Healthchecks
+The `db` service uses `pg_isready` to signal readiness, ensuring the API waits for the database to be healthy.
+
+---
+
+## 🧩 Backend Components
+
+| File | Purpose |
+|------|----------|
+| `main.py` | FastAPI entrypoint; builds the GraphQL app and enables CORS |
+| `core.py` | Defines Strawberry `Query` and `Mutation` classes |
+| `app/api/services.py` | Service layer handling database operations and business logic |
+| `app/core/config.py` | Environment loading and app settings via Pydantic |
+| `app/core/database.py` | SQLAlchemy engine and session management |
+| `app/models/` | SQLAlchemy models for all tracked entities |
+
+---
+
+## 🧠 Workflow Overview
+1. Frontend sends GraphQL requests to `/graphql`.
+2. Strawberry routes them to resolvers in `core.py`.
+3. `MutationService` and `QueryService` handle logic in `app/api/services.py`.
+4. Services use SQLAlchemy sessions to interact with the database.
+5. Results are serialized and returned through GraphQL.
+
+---
+
+## 🧱 Data Model Overview
+- **Department** → 1‑N → **Part**
+- **Part** → 1‑N → **Defect**, **Quality**
+- **DefectCategory** → groups related **Defects**
+- **User** → assigned to **Department**
+
+Each entity includes fields like titles, descriptions, relationships, and timestamps to support analytics.
+
+---
+
+## 🔍 Development Tips
+- Access GraphQL Playground at [http://localhost:8000/graphql](http://localhost:8000/graphql)
+- Test a simple query:
+  ```graphql
+  query { __typename }
+  ```
+- Manage dependencies inside `backend/requirements.txt` (ensure `psycopg[binary]` is present).
+- Use `docker exec -it shop_floor /bin/bash` for in‑container debugging.
+
+---
+
+## 🚀 Future Enhancements
+- Implement full CRUD logic in `services.py`.
+- Add Alembic migrations for versioned schema control.
+- Extend frontend with analytics dashboards and defect visualization.
+- Integrate authentication (JWT or session‑based).
+
+---
+
+## ✅ Status
+**Current State:** containers build and run successfully, backend connects to Postgres, `/graphql` endpoint available.  
+**Next Steps:** flesh out service logic and UI for production data tracking.
+
+---

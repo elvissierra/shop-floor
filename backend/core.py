@@ -1,7 +1,7 @@
 from typing import List, Optional
 import strawberry
 from sqlalchemy.orm import Session
-from backend.app.schema import (
+from app.schema import (
     UserType,
     DefectCategoryType,
     DefectType,
@@ -15,7 +15,7 @@ from backend.app.schema import (
     PartInput,
     QualityInput,
 )
-from backend.app.api.services import MutationService, QueryService
+from app.api.services import MutationService, QueryService
 
 
 @strawberry.type
