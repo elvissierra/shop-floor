@@ -104,6 +104,66 @@ class Mutation:
             part_id=quality.part_id,
         )
 
+        # ---- User CRUD ----
+    @strawberry.mutation
+    def update_user(self, id: int, data: UserInput, info) -> UserType:
+        db: Session = info.context["db"]
+        u = MutationService(db).update_user(id, data)
+        return UserType(id=u.id, username=u.username, department_id=u.department_id, job=u.job, time=u.time)
+
+    @strawberry.mutation
+    def delete_user(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_user(id)
+
+    # ---- Part CRUD ----
+    @strawberry.mutation
+    def update_part(self, id: int, data: PartInput, info) -> PartType:
+        db: Session = info.context["db"]
+        p = MutationService(db).update_part(id, data)
+        return PartType(id=p.id, name=p.name, department_id=p.department_id)
+
+    @strawberry.mutation
+    def delete_part(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_part(id)
+
+    # ---- DefectCategory CRUD ----
+    @strawberry.mutation
+    def update_defect_category(self, id: int, data: DefectCategoryInput, info) -> DefectCategoryType:
+        db: Session = info.context["db"]
+        dc = MutationService(db).update_defect_category(id, data)
+        return DefectCategoryType(id=dc.id, title=dc.title, department_id=dc.department_id)
+
+    @strawberry.mutation
+    def delete_defect_category(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_defect_category(id)
+
+    # ---- Defect CRUD ----
+    @strawberry.mutation
+    def update_defect(self, id: int, data: DefectInput, info) -> DefectType:
+        db: Session = info.context["db"]
+        d = MutationService(db).update_defect(id, data)
+        return DefectType(id=d.id, title=d.title, description=d.description, part_id=d.part_id, defect_category_id=d.defect_category_id)
+
+    @strawberry.mutation
+    def delete_defect(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_defect(id)
+
+    # ---- Quality CRUD ----
+    @strawberry.mutation
+    def update_quality(self, id: int, data: QualityInput, info) -> QualityType:
+        db: Session = info.context["db"]
+        q = MutationService(db).update_quality(id, data)
+        return QualityType(id=q.id, pass_fail=q.pass_fail, defect_count=q.defect_count, part_id=q.part_id)
+
+    @strawberry.mutation
+    def delete_quality(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_quality(id)
+
 
 @strawberry.type
 class Query:
