@@ -25,12 +25,12 @@ function mapPart(gqlPart) {
 
 export const shopFloorService = {
   // --- Departments ---
-  async getDepartments() {
+  async getDepartments({ limit = 50, offset = 0 } = {}) {
     const data = await gql(/* GraphQL */ `
-      query GetDepartments {
-        departments { id title description }
+      query GetDepartments($limit: Int, $offset: Int) {
+        departments(limit: $limit, offset: $offset) { id title description }
       }
-    `);
+    `, { limit, offset });
     return data.departments;
   },
 
@@ -53,12 +53,12 @@ export const shopFloorService = {
   },
 
   // --- Parts ---
-  async getParts() {
+  async getParts({ limit = 50, offset = 0 } = {}) {
     const data = await gql(/* GraphQL */ `
-      query GetParts {
-        parts { id name departmentId }
+      query GetParts($limit: Int, $offset: Int) {
+        parts(limit: $limit, offset: $offset) { id name departmentId }
       }
-    `);
+    `, { limit, offset });
     return data.parts.map(mapPart);
   },
 
@@ -69,6 +69,9 @@ export const shopFloorService = {
       }
     `, { data: partData });
     return mapPart(data.addPart);
+  },
+  async addPart(partData) {
+    return this.createPart(partData);
   },
 
   // --- Quality (example) ---

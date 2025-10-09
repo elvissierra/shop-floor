@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import ShopFloorView from '../views/ShopFloorView.vue';
+import DepartmentList from '../components/DepartmentList.vue';
+import PartList from '../components/PartList.vue';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,12 +16,12 @@ const router = createRouter({
     {
       path: '/departments',
       name: 'departments',
-      component: ShopFloorView
+      component: DepartmentList
     },
     {
       path: '/parts',
       name: 'parts',
-      component: ShopFloorView
+      component: PartList
     }
   ]
 });

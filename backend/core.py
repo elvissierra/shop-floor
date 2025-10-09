@@ -105,11 +105,18 @@ class Mutation:
         )
 
         # ---- User CRUD ----
+
     @strawberry.mutation
     def update_user(self, id: int, data: UserInput, info) -> UserType:
         db: Session = info.context["db"]
         u = MutationService(db).update_user(id, data)
-        return UserType(id=u.id, username=u.username, department_id=u.department_id, job=u.job, time=u.time)
+        return UserType(
+            id=u.id,
+            username=u.username,
+            department_id=u.department_id,
+            job=u.job,
+            time=u.time,
+        )
 
     @strawberry.mutation
     def delete_user(self, id: int, info) -> bool:
@@ -130,10 +137,14 @@ class Mutation:
 
     # ---- DefectCategory CRUD ----
     @strawberry.mutation
-    def update_defect_category(self, id: int, data: DefectCategoryInput, info) -> DefectCategoryType:
+    def update_defect_category(
+        self, id: int, data: DefectCategoryInput, info
+    ) -> DefectCategoryType:
         db: Session = info.context["db"]
         dc = MutationService(db).update_defect_category(id, data)
-        return DefectCategoryType(id=dc.id, title=dc.title, department_id=dc.department_id)
+        return DefectCategoryType(
+            id=dc.id, title=dc.title, department_id=dc.department_id
+        )
 
     @strawberry.mutation
     def delete_defect_category(self, id: int, info) -> bool:
@@ -145,7 +156,13 @@ class Mutation:
     def update_defect(self, id: int, data: DefectInput, info) -> DefectType:
         db: Session = info.context["db"]
         d = MutationService(db).update_defect(id, data)
-        return DefectType(id=d.id, title=d.title, description=d.description, part_id=d.part_id, defect_category_id=d.defect_category_id)
+        return DefectType(
+            id=d.id,
+            title=d.title,
+            description=d.description,
+            part_id=d.part_id,
+            defect_category_id=d.defect_category_id,
+        )
 
     @strawberry.mutation
     def delete_defect(self, id: int, info) -> bool:
@@ -157,7 +174,12 @@ class Mutation:
     def update_quality(self, id: int, data: QualityInput, info) -> QualityType:
         db: Session = info.context["db"]
         q = MutationService(db).update_quality(id, data)
-        return QualityType(id=q.id, pass_fail=q.pass_fail, defect_count=q.defect_count, part_id=q.part_id)
+        return QualityType(
+            id=q.id,
+            pass_fail=q.pass_fail,
+            defect_count=q.defect_count,
+            part_id=q.part_id,
+        )
 
     @strawberry.mutation
     def delete_quality(self, id: int, info) -> bool:
@@ -169,9 +191,11 @@ class Mutation:
 class Query:
 
     @strawberry.field
-    def users(self, info) -> List[UserType]:
+    def users(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[UserType]:
         db: Session = info.context.get("db")
-        users = QueryService(db).get_all_users()
+        users = QueryService(db).get_all_users(limit=limit, offset=offset)
         return [
             UserType(
                 id=user.id,
@@ -196,10 +220,12 @@ class Query:
         )
 
     @strawberry.field
-    def departments(self, info) -> List[DepartmentType]:
+    def departments(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[DepartmentType]:
         db: Session = info.context.get("db")
         service = QueryService(db)
-        departments = service.get_all_departments()
+        departments = service.get_all_departments(limit=limit, offset=offset)
         return [
             DepartmentType(
                 id=department.id,
@@ -226,10 +252,12 @@ class Query:
         )
 
     @strawberry.field
-    def parts(self, info) -> List[PartType]:
+    def parts(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[PartType]:
         db: Session = info.context.get("db")
         service = QueryService(db)
-        parts = service.get_all_parts()
+        parts = service.get_all_parts(limit=limit, offset=offset)
         return [
             PartType(
                 id=part.id,
@@ -246,10 +274,14 @@ class Query:
         return PartType(id=part.id, name=part.name, department_id=part.department_id)
 
     @strawberry.field
-    def defect_categories(self, info) -> List[DefectCategoryType]:
+    def defect_categories(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[DefectCategoryType]:
         db: Session = info.context.get("db")
         service = QueryService(db)
-        defect_categories = service.get_all_defect_categories()
+        defect_categories = service.get_all_defect_categories(
+            limit=limit, offset=offset
+        )
         return [
             DefectCategoryType(
                 id=defect_category.id,
@@ -270,10 +302,12 @@ class Query:
         )
 
     @strawberry.field
-    def defects(self, info) -> List[DefectType]:
+    def defects(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[DefectType]:
         db: Session = info.context.get("db")
         service = QueryService(db)
-        defects = service.get_all_defects()
+        defects = service.get_all_defects(limit=limit, offset=offset)
         return [
             DefectType(
                 id=defect.id,
@@ -298,10 +332,12 @@ class Query:
         )
 
     @strawberry.field
-    def qualities(self, info) -> List[QualityType]:
+    def qualities(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[QualityType]:
         db: Session = info.context.get("db")
         service = QueryService(db)
-        qualities = service.get_all_qualities()
+        qualities = service.get_all_qualities(limit=limit, offset=offset)
         return [
             QualityType(
                 id=quality.id,

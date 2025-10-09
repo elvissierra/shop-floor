@@ -38,10 +38,10 @@ export const useShopFloorStore = defineStore('shopFloor', {
     },
 
     // Department methods
-    async fetchDepartments() {
+    async fetchDepartments(params = {}) {
       this.loading = true;
       try {
-        const response = await shopFloorService.getDepartments();
+        const response = await shopFloorService.getDepartments(params);
         this.error = null;
         return response;
       } catch (err) {
@@ -66,10 +66,10 @@ export const useShopFloorStore = defineStore('shopFloor', {
     },
 
     // Part methods
-    async fetchParts() {
+    async fetchParts(params = {}) {
       this.loading = true;
       try {
-        const response = await shopFloorService.getParts();
+        const response = await shopFloorService.getParts(params);
         this.error = null;
         return response;
       } catch (err) {

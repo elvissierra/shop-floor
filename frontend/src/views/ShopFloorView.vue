@@ -1,6 +1,3 @@
-
-// Store is wired to GraphQL (fetchShopFloorData() → services/api.js → /graphql)
-
 <template>
   <div class="shop-floor">
     <h1>Shop Floor Dashboard</h1>

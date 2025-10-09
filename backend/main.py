@@ -8,9 +8,14 @@ from fastapi.responses import JSONResponse
 from strawberry.fastapi import GraphQLRouter
 from core import Mutation, Query
 from app.core.config import settings
-from app.core.database import SessionLocal
+from sqlalchemy import text
+from app.core.database import SessionLocal, engine
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+)
 log = logging.getLogger("shop-floor")
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -25,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Per-request DB session
 def get_db():
     db = SessionLocal()
@@ -33,6 +39,7 @@ def get_db():
     finally:
         db.close()
 
+
 async def get_context(request: Request):
     # allocate a per-request session for GraphQL
     db_gen = get_db()
@@ -40,6 +47,7 @@ async def get_context(request: Request):
     request.state._db_gen = db_gen
     request.state.db = db
     return {"db": db}
+
 
 @app.middleware("http")
 async def close_db_after_request(request: Request, call_next):
@@ -53,24 +61,65 @@ async def close_db_after_request(request: Request, call_next):
             except StopIteration:
                 pass
 
-graphql_app = GraphQLRouter(schema, context_getter=get_context)
+
+# --- GraphQL error formatting with codes ---
+def graphql_error_formatter(error):
+    # Try to unwrap the original exception raised in resolvers/services
+    original = getattr(error, "original_error", None) or error
+    message = str(original) if original else str(error)
+
+    code = "INTERNAL_SERVER_ERROR"
+    # Convention: prefix messages in services with "NOT_FOUND:", "CONFLICT:", "VALIDATION:"
+    if isinstance(message, str):
+        if message.startswith("NOT_FOUND:"):
+            code = "NOT_FOUND"
+            message = message.split(":", 1)[1].strip()
+        elif message.startswith("CONFLICT:"):
+            code = "CONFLICT"
+            message = message.split(":", 1)[1].strip()
+        elif message.startswith("VALIDATION:"):
+            code = "BAD_REQUEST"
+            message = message.split(":", 1)[1].strip()
+
+    # Build a GraphQL-compliant error dict with extensions.code
+    return {
+        "message": message,
+        "locations": getattr(error, "locations", None),
+        "path": getattr(error, "path", None),
+        "extensions": {"code": code},
+    }
+
+
+graphql_app = GraphQLRouter(
+    schema,
+    context_getter=get_context,
+)
 app.include_router(graphql_app, prefix="/graphql")
+
 
 # Health & readiness
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
 
+
 @app.get("/readyz")
 def readyz():
     if not settings.DATABASE_URL:
         return JSONResponse(status_code=500, content={"status": "error", "reason": "no DATABASE_URL"})
-    return {"status": "ready"}
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("select 1"))
+        return {"status": "ready"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "reason": str(e)})
+
 
 # Error normalization
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 
 @app.get("/")
 def ping():

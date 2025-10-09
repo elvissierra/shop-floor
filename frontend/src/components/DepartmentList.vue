@@ -1,6 +1,3 @@
-
-// store needs to be reconfigured to use Gql// store now uses GraphQL service
-
 <template>
   <div class="department-list">
     <h2>Departments</h2>
@@ -16,6 +13,10 @@
         </div>
       </div>
     </div>
+    <div v-if="!loading" class="pager">
+    <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
+    <div v-else class="end">No more departments</div>
+  </div>
   </div>
 </template>
 
@@ -27,17 +28,32 @@ const store = useShopFloorStore();
 const departments = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const limit = ref(20);
+const offset = ref(0);
+const moreAvailable = ref(true);
 
-onMounted(async () => {
+async function loadBatch(reset = false) {
+  if (reset) {
+    departments.value = [];
+    offset.value = 0;
+    moreAvailable.value = true;
+  }
   try {
-    const response = await store.fetchDepartments();
-    departments.value = response;
+    const batch = await store.fetchDepartments({ limit: limit.value, offset: offset.value });
+    if (!batch || batch.length === 0) {
+      moreAvailable.value = false;
+      return;
+    }
+    departments.value = departments.value.concat(batch);
+    offset.value += batch.length;
   } catch (err) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(() => { loadBatch(true); });
 
 const editDepartment = (dept) => {
   // TODO: Implement edit functionality
@@ -121,4 +137,9 @@ const deleteDepartment = async (id) => {
   border-radius: 4px;
   margin: 1rem 0;
 }
+
+.pager { margin-top: 1rem; display:flex; justify-content:center; }
+.btn-more { background:#2c3e50; color:#fff; border:none; border-radius:6px; padding:0.6rem 1rem; cursor:pointer; }
+.btn-more:hover { opacity: .9; }
+.end { color:#888; font-size:.9rem; }
 </style> 

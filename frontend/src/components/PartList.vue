@@ -1,6 +1,3 @@
-
-// store now uses GraphQL service
-
 <template>
   <div class="part-list">
     <h2>Parts</h2>
@@ -16,6 +13,10 @@
         </div>
       </div>
     </div>
+    <div v-if="!loading" class="pager">
+    <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
+    <div v-else class="end">No more parts</div>
+  </div>
   </div>
 </template>
 
@@ -27,25 +28,38 @@ const store = useShopFloorStore();
 const parts = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const limit = ref(20);
+const offset = ref(0);
+const moreAvailable = ref(true);
 
-onMounted(async () => {
+async function loadBatch(reset = false) {
+  if (reset) {
+    parts.value = [];
+    offset.value = 0;
+    moreAvailable.value = true;
+  }
   try {
-    const response = await store.fetchParts();
-    parts.value = response;
+    const batch = await store.fetchParts({ limit: limit.value, offset: offset.value });
+    if (!batch || batch.length === 0) {
+      moreAvailable.value = false;
+      return;
+    }
+    parts.value = parts.value.concat(batch);
+    offset.value += batch.length;
   } catch (err) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(() => { loadBatch(true); });
 
 const viewQuality = (part) => {
-  // TODO: Implement quality view
   console.log('View quality for part:', part);
 };
 
 const addDefect = (part) => {
-  // TODO: Implement defect addition
   console.log('Add defect for part:', part);
 };
 </script>
@@ -115,4 +129,9 @@ const addDefect = (part) => {
   border-radius: 4px;
   margin: 1rem 0;
 }
+
+.pager { margin-top: 1rem; display:flex; justify-content:center; }
+.btn-more { background:#2c3e50; color:#fff; border:none; border-radius:6px; padding:0.6rem 1rem; cursor:pointer; }
+.btn-more:hover { opacity: .9; }
+.end { color:#888; font-size:.9rem; }
 </style> 
