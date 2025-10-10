@@ -24,9 +24,13 @@
       <button class="btn-more" @click="loadBatch(true)">Refresh</button>
     </div>
     <div v-if="!loading" class="pager">
-    <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
-    <div v-else class="end">No more departments</div>
-  </div>
+      <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
+      <div v-else class="end">No more departments</div>
+    </div>
+    <Modal v-if="showModal" @cancel="closeModal">
+      <template #title>{{ editing ? 'Edit Department' : 'New Department' }}</template>
+      <DepartmentForm v-model="form" :submitting="submitting" @cancel="closeModal" @submit="saveDepartment" />
+    </Modal>
   </div>
 </template>
 
@@ -34,6 +38,9 @@
 import { ref, onMounted } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
+import Modal from './Modal.vue'
+import DepartmentForm from './DepartmentForm.vue'
+import { shopFloorService } from '../services/api'
 
 const { push: toast } = useToast()
 const store = useShopFloorStore();
@@ -43,6 +50,47 @@ const error = ref(null);
 const limit = ref(20);
 const offset = ref(0);
 const moreAvailable = ref(true);
+
+const showModal = ref(false)
+const editing = ref(false)
+const submitting = ref(false)
+const form = ref({ title: '', description: '' })
+const selectedId = ref(null)
+
+function openCreate() {
+  editing.value = false
+  form.value = { title: '', description: '' }
+  showModal.value = true
+}
+function openEdit(dept) {
+  editing.value = true
+  form.value = { title: dept.title, description: dept.description }
+  selectedId.value = dept.id
+  showModal.value = true
+}
+function closeModal() { showModal.value = false }
+
+async function saveDepartment() {
+  try {
+    submitting.value = true
+    if (editing.value && selectedId.value != null) {
+      const updated = await shopFloorService.updateDepartment(selectedId.value, form.value)
+      const idx = departments.value.findIndex(d => d.id === selectedId.value)
+      if (idx !== -1) departments.value[idx] = updated
+      toast({ type: 'success', title: 'Department updated', message: updated.title })
+    } else {
+      const created = await shopFloorService.createDepartment(form.value)
+      departments.value.unshift(created)
+      toast({ type: 'success', title: 'Department created', message: created.title })
+    }
+    closeModal()
+  } catch (err) {
+    error.value = err.message
+    toast({ type: 'error', title: 'Save failed', message: err.code ? `${err.code}: ${err.message}` : err.message })
+  } finally {
+    submitting.value = false
+  }
+}
 
 async function loadBatch(reset = false) {
   if (reset) {
@@ -67,10 +115,7 @@ async function loadBatch(reset = false) {
 
 onMounted(() => { loadBatch(true); });
 
-const editDepartment = (dept) => {
-  // TODO: Implement edit functionality
-  console.log('Edit department:', dept);
-};
+const editDepartment = (dept) => openEdit(dept)
 
 const deleteDepartment = async (id) => {
   if (confirm('Are you sure you want to delete this department?')) {
