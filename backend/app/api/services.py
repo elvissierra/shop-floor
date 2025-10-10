@@ -128,7 +128,7 @@ class DefectRepo:
         return self.db.query(Defect).offset(o).limit(l).all()
 
     def get(self, defect_id: int) -> Defect | None:
-        return self.db.query(Defect).get(defect_id)
+        return self.db.get(Defect, defect_id)
 
     def first_by_part(self, part_id: int) -> Defect | None:
         return self.db.query(Defect).filter(Defect.part_id == part_id).first()
@@ -200,7 +200,7 @@ class MutationService:
             self.db.query(User).filter(User.username == user_data.username).first()
         )
         if existing_user:
-            raise Exception("CONFLICT: User already exists; check username.")
+            raise GraphQLError("User already exists; check username.", extensions={"code": "CONFLICT"})
 
         user = User(
             username=user_data.username,
@@ -220,7 +220,7 @@ class MutationService:
             .first()
         )
         if existing_department:
-            raise Exception("CONFLICT: Department already exists; check title.")
+            raise GraphQLError("Department already exists; check title.", extensions={"code": "CONFLICT"})
 
         department = Department(
             title=department_data.title,
@@ -236,7 +236,7 @@ class MutationService:
     ) -> Department:
         department = self.db.get(Department, department_id)
         if not department:
-            raise Exception(f"NOT_FOUND: Department {department_id} not found")
+            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
         department.title = data.title
         department.description = data.description
         self.db.commit()
@@ -246,7 +246,7 @@ class MutationService:
     def delete_department(self, department_id: int) -> bool:
         department = self.db.get(Department, department_id)
         if not department:
-            raise Exception(f"NOT_FOUND: Department {department_id} not found")
+            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(department)
         self.db.commit()
         return True
@@ -298,12 +298,12 @@ class MutationService:
     def update_user(self, user_id: int, data: UserInput) -> User:
         user = self.db.get(User, user_id)
         if not user:
-            raise Exception(f"NOT_FOUND: User {user_id} not found")
+            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
         # Optional uniqueness check if username changed
         if data.username and data.username != user.username:
             exists = self.db.query(User).filter(User.username == data.username).first()
             if exists:
-                raise Exception("CONFLICT: User already exists; check username.")
+                raise GraphQLError("User already exists; check username.", extensions={"code": "CONFLICT"})
             user.username = data.username
         user.department_id = data.department_id
         user.job = data.job
@@ -315,7 +315,7 @@ class MutationService:
     def delete_user(self, user_id: int) -> bool:
         user = self.db.get(User, user_id)
         if not user:
-            raise Exception(f"NOT_FOUND: User {user_id} not found")
+            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(user)
         self.db.commit()
         return True
@@ -324,7 +324,7 @@ class MutationService:
     def update_part(self, part_id: int, data: PartInput) -> Part:
         part = self.db.get(Part, part_id)
         if not part:
-            raise Exception(f"NOT_FOUND: Part {part_id} not found")
+            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
         part.name = data.name
         part.department_id = data.department_id
         self.db.commit()
@@ -334,7 +334,7 @@ class MutationService:
     def delete_part(self, part_id: int) -> bool:
         part = self.db.get(Part, part_id)
         if not part:
-            raise Exception(f"NOT_FOUND: Part {part_id} not found")
+            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(part)
         self.db.commit()
         return True
@@ -345,9 +345,7 @@ class MutationService:
     ) -> DefectCategory:
         dc = self.db.get(DefectCategory, defect_category_id)
         if not dc:
-            raise Exception(
-                f"NOT_FOUND: Defect category {defect_category_id} not found"
-            )
+            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
         # Optional uniqueness check if title changed
         if data.title and data.title != dc.title:
             exists = (
@@ -356,9 +354,7 @@ class MutationService:
                 .first()
             )
             if exists:
-                raise Exception(
-                    "CONFLICT: Defect category already exists; check title."
-                )
+                raise GraphQLError("Defect category already exists; check title.", extensions={"code": "CONFLICT"})
             dc.title = data.title
         dc.department_id = data.department_id
         self.db.commit()
@@ -368,9 +364,7 @@ class MutationService:
     def delete_defect_category(self, defect_category_id: int) -> bool:
         dc = self.db.get(DefectCategory, defect_category_id)
         if not dc:
-            raise Exception(
-                f"NOT_FOUND: Defect category {defect_category_id} not found"
-            )
+            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(dc)
         self.db.commit()
         return True
@@ -379,7 +373,7 @@ class MutationService:
     def update_defect(self, defect_id: int, data: DefectInput) -> Defect:
         defect = self.db.get(Defect, defect_id)
         if not defect:
-            raise Exception(f"NOT_FOUND: Defect {defect_id} not found")
+            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
         defect.title = data.title
         defect.description = data.description
         defect.part_id = data.part_id
@@ -391,7 +385,7 @@ class MutationService:
     def delete_defect(self, defect_id: int) -> bool:
         defect = self.db.get(Defect, defect_id)
         if not defect:
-            raise Exception(f"NOT_FOUND: Defect {defect_id} not found")
+            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(defect)
         self.db.commit()
         return True
@@ -400,7 +394,7 @@ class MutationService:
     def update_quality(self, quality_id: int, data: QualityInput) -> Quality:
         quality = self.db.get(Quality, quality_id)
         if not quality:
-            raise Exception(f"NOT_FOUND: Quality {quality_id} not found")
+            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
         quality.pass_fail = data.pass_fail
         quality.defect_count = data.defect_count
         quality.part_id = data.part_id
@@ -411,7 +405,7 @@ class MutationService:
     def delete_quality(self, quality_id: int) -> bool:
         quality = self.db.get(Quality, quality_id)
         if not quality:
-            raise Exception(f"NOT_FOUND: Quality {quality_id} not found")
+            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
         self.db.delete(quality)
         self.db.commit()
         return True
@@ -436,7 +430,7 @@ class QueryService:
     def get_user(self, user_id: int) -> User:
         user = self.users.get(user_id)
         if not user:
-            raise Exception(f"NOT_FOUND: User {user_id} not found")
+            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
         return user
 
     # ---- Departments ----
@@ -448,13 +442,13 @@ class QueryService:
     def get_department(self, department_id: int) -> Department:
         department = self.departments.get(department_id)
         if not department:
-            raise Exception(f"NOT_FOUND: Department {department_id} not found")
+            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
         return department
 
     def get_department_by_title(self, title: str) -> Department:
         department = self.departments.by_title(title)
         if not department:
-            raise Exception(f"NOT_FOUND: Department {title} not found")
+            raise GraphQLError(f"Department {title} not found", extensions={"code": "NOT_FOUND"})
         return department
 
     # ---- Parts ----
@@ -466,7 +460,7 @@ class QueryService:
     def get_part(self, part_id: int) -> Part:
         part = self.parts.get(part_id)
         if not part:
-            raise Exception(f"NOT_FOUND: Part {part_id} not found")
+            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
         return part
 
     # ---- Defect Categories ----
@@ -478,9 +472,7 @@ class QueryService:
     def get_defect_category(self, defect_category_id: int) -> DefectCategory:
         defect_category = self.defect_categories.get(defect_category_id)
         if not defect_category:
-            raise Exception(
-                f"NOT_FOUND: Defect category {defect_category_id} not found"
-            )
+            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
         return defect_category
 
     # ---- Defects ----
@@ -492,21 +484,19 @@ class QueryService:
     def get_defect(self, defect_id: int) -> Defect:
         defect = self.defects.get(defect_id)
         if not defect:
-            raise Exception(f"NOT_FOUND: Defect {defect_id} not found")
+            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
         return defect
 
     def get_defect_by_part_id(self, part_id: int) -> Defect:
         defect = self.defects.first_by_part(part_id)
         if not defect:
-            raise Exception(f"NOT_FOUND: Defect for part {part_id} not found")
+            raise GraphQLError(f"Defect for part {part_id} not found", extensions={"code": "NOT_FOUND"})
         return defect
 
     def get_defect_by_defect_category_id(self, defect_category_id: int) -> Defect:
         defect = self.defects.first_by_defect_category(defect_category_id)
         if not defect:
-            raise Exception(
-                f"NOT_FOUND: Defect for defect category {defect_category_id} not found"
-            )
+            raise GraphQLError(f"Defect for defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
         return defect
 
     def get_defect_by_part_id_and_defect_category_id(
@@ -516,9 +506,7 @@ class QueryService:
             part_id, defect_category_id
         )
         if not defect:
-            raise Exception(
-                f"NOT_FOUND: Defect for part {part_id} and defect category {defect_category_id} not found"
-            )
+            raise GraphQLError(f"Defect for part {part_id} and defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
         return defect
 
     def get_defect_by_part_id_and_department_id(
@@ -526,9 +514,7 @@ class QueryService:
     ) -> Defect:
         defect = self.defects.first_by_part_and_department(part_id, department_id)
         if not defect:
-            raise Exception(
-                f"NOT_FOUND: Defect for part {part_id} and department {department_id} not found"
-            )
+            raise GraphQLError(f"Defect for part {part_id} and department {department_id} not found", extensions={"code": "NOT_FOUND"})
         return defect
 
     # ---- Qualities ----
@@ -540,11 +526,11 @@ class QueryService:
     def get_quality(self, quality_id: int) -> Quality:
         quality = self.qualities.get(quality_id)
         if not quality:
-            raise Exception(f"NOT_FOUND: Quality {quality_id} not found")
+            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
         return quality
 
     def get_quality_by_part_id(self, part_id: int) -> Quality:
         quality = self.qualities.first_by_part(part_id)
         if not quality:
-            raise Exception(f"NOT_FOUND: Quality for part {part_id} not found")
+            raise GraphQLError(f"Quality for part {part_id} not found", extensions={"code": "NOT_FOUND"})
         return quality
