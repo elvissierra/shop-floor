@@ -1,7 +1,12 @@
 <template>
   <div class="department-list">
     <h2>Departments</h2>
-    <div v-if="loading" class="loading">Loading departments...</div>
+    <div class="toolbar">
+      <button class="btn-primary" @click="openCreate">+ Add Department</button>
+    </div>
+      <div v-if="loading" class="skeletons">
+        <div class="sk-card" v-for="n in 6" :key="n"></div>
+      </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="departments">
       <div v-for="dept in departments" :key="dept.id" class="department-card">
@@ -13,6 +18,11 @@
         </div>
       </div>
     </div>
+    <div v-if="!loading && !error && departments.length === 0" class="empty">
+      <h3>No departments yet</h3>
+      <p>Create your first department from the backend or via GraphQL.</p>
+      <button class="btn-more" @click="loadBatch(true)">Refresh</button>
+    </div>
     <div v-if="!loading" class="pager">
     <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
     <div v-else class="end">No more departments</div>
@@ -23,7 +33,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
+import { useToast } from '../composables/useToast'
 
+const { push: toast } = useToast()
 const store = useShopFloorStore();
 const departments = ref([]);
 const loading = ref(true);
@@ -65,8 +77,10 @@ const deleteDepartment = async (id) => {
     try {
       await store.deleteDepartment(id);
       departments.value = departments.value.filter(d => d.id !== id);
+      toast({ type: 'success', title: 'Department deleted', message: 'The department was removed.' })
     } catch (err) {
       error.value = err.message;
+      toast({ type: 'error', title: 'Delete failed', message: err.code ? `${err.code}: ${err.message}` : err.message })
     }
   }
 };
@@ -142,4 +156,10 @@ const deleteDepartment = async (id) => {
 .btn-more { background:#2c3e50; color:#fff; border:none; border-radius:6px; padding:0.6rem 1rem; cursor:pointer; }
 .btn-more:hover { opacity: .9; }
 .end { color:#888; font-size:.9rem; }
+
+.skeletons { display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1rem; margin-top:1rem; }
+.sk-card { height: 120px; border-radius:8px; background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%); background-size: 400% 100%; animation: shimmer 1.2s ease-in-out infinite; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+.empty { text-align:center; padding: 2rem 0; color:#555; }
+.empty h3 { margin:0 0 .5rem 0; color:#2c3e50; }
 </style> 

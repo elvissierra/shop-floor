@@ -3,12 +3,16 @@
     <nav class="navbar">
       <router-link to="/" class="nav-link">Shop Floor Dashboard</router-link>
     </nav>
-    
     <main class="main-content">
-      <router-view></router-view>
+      <router-view />
     </main>
+    <Toast />
   </div>
 </template>
+
+<script setup>
+import Toast from './components/Toast.vue'
+</script>
 
 <style>
 .app {

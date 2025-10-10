@@ -8,9 +8,25 @@ async function gql(query, variables = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json?.errors?.[0]?.message || `HTTP ${res.status}`);
-  if (json.errors && json.errors.length) throw new Error(json.errors[0].message);
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'NETWORK';
+    throw err;
+  }
+  if (json?.errors?.length) {
+    const gErr = json.errors[0] || {};
+    const err = new Error(gErr.message || `HTTP ${res.status}`);
+    err.code = gErr.extensions?.code || 'GRAPHQL_ERROR';
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'HTTP_ERROR';
+    throw err;
+  }
   return json.data;
 }
 
@@ -37,6 +53,15 @@ export const shopFloorService = {
       }
     `, { data: departmentData });
     return data.addDepartment;
+  },
+
+  async updateDepartment(id, departmentData) {
+    const data = await gql(/* GraphQL */ `
+      mutation UpdateDepartment($id: Int!, $data: DepartmentInput!) {
+        updateDepartment(id: $id, data: $data) { id title description }
+      }
+    `, { id, data: departmentData });
+    return data.updateDepartment;
   },
 
   async deleteDepartment(id) {
