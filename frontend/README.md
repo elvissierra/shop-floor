@@ -1,3 +1,7 @@
+http://localhost:8000/graphql
+http://localhost:8000/healthz
+http://localhost:8080 (UI)
+
 Browser (user)
    │
    ▼

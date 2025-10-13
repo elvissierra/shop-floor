@@ -1,7 +1,12 @@
 <template>
   <div class="app">
-    <nav class="navbar">
-      <router-link to="/" class="nav-link">Shop Floor Dashboard</router-link>
+    <nav class="navbar" role="navigation" aria-label="Main">
+      <router-link to="/" class="brand">Shop Floor</router-link>
+      <div class="nav-links">
+        <router-link to="/" class="nav-link" exact>Dashboard</router-link>
+        <router-link to="/departments" class="nav-link">Departments</router-link>
+        <router-link to="/parts" class="nav-link">Parts</router-link>
+      </div>
     </nav>
     <main class="main-content">
       <router-view />
@@ -19,25 +24,51 @@ import Toast from './components/Toast.vue'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #f6f7f9;
 }
 
 .navbar {
-  background-color: #2c3e50;
-  padding: 1rem 2rem;
+  background-color: #111827;
+  padding: .75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.brand {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: .75rem;
 }
 
 .nav-link {
-  color: white;
+  color: #e5e7eb;
   text-decoration: none;
-  font-size: 1.2rem;
+  font-size: .95rem;
+  padding: .35rem .6rem;
+  border-radius: .5rem;
+}
+
+.nav-link.router-link-active {
+  background: #1f2937;
+  color: #fff;
 }
 
 .nav-link:hover {
-  color: #42b983;
+  color: #fff;
 }
 
 .main-content {
   flex: 1;
-  background-color: #f5f5f5;
+  padding: 1rem;
 }
 </style>

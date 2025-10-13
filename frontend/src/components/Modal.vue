@@ -1,7 +1,7 @@
 <template>
-  <div class="modal-overlay" @click.self="emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
-      <header class="modal-header">
+      <header class="modal-header" id="modal-title">
         <slot name="title">Dialog</slot>
         <button class="close" aria-label="Close" @click="emit('cancel')">×</button>
       </header>
@@ -16,7 +16,15 @@
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue'
 const emit = defineEmits(['cancel'])
+
+function onKey(e) {
+  if (e.key === 'Escape') emit('cancel')
+}
+
+onMounted(() => window.addEventListener('keydown', onKey))
+onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <style scoped>
@@ -26,4 +34,5 @@ const emit = defineEmits(['cancel'])
 .modal-body { padding: 1rem; }
 .modal-footer { padding: .75rem 1rem; border-top: 1px solid #eee; display:flex; gap:.5rem; justify-content:flex-end; }
 .close { appearance:none; border:none; background:transparent; font-size: 22px; cursor:pointer; line-height:1; }
+.modal { outline: none; }
 </style>

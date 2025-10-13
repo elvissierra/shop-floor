@@ -3,13 +3,26 @@
     <h2>Departments</h2>
     <div class="toolbar">
       <button class="btn-primary" @click="openCreate">+ Add Department</button>
+      <div class="spacer"></div>
+      <input
+        v-model.trim="q"
+        @keydown.enter.prevent
+        type="search"
+        class="search"
+        placeholder="Search departments…"
+        aria-label="Search departments"
+      />
+      <select v-model="sortKey" class="sort" aria-label="Sort departments">
+        <option value="alpha">A → Z</option>
+        <option value="recent">Newest first</option>
+      </select>
     </div>
       <div v-if="loading" class="skeletons">
         <div class="sk-card" v-for="n in 6" :key="n"></div>
       </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="departments">
-      <div v-for="dept in departments" :key="dept.id" class="department-card">
+      <div v-for="dept in visibleDepartments" :key="dept.id" class="department-card">
         <h3>{{ dept.title }}</h3>
         <p>{{ dept.description }}</p>
         <div class="department-actions">
@@ -35,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
@@ -50,6 +63,26 @@ const error = ref(null);
 const limit = ref(20);
 const offset = ref(0);
 const moreAvailable = ref(true);
+
+const q = ref('');
+const sortKey = ref('recent');
+const visibleDepartments = computed(() => {
+  let list = departments.value;
+  if (q.value) {
+    const needle = q.value.toLowerCase();
+    list = list.filter(d =>
+      d.title?.toLowerCase().includes(needle) ||
+      d.description?.toLowerCase().includes(needle)
+    );
+  }
+  if (sortKey.value === 'alpha') {
+    list = [...list].sort((a,b) => a.title.localeCompare(b.title));
+  } else {
+    // assume higher id == newer as a simple heuristic
+    list = [...list].sort((a,b) => (b.id ?? 0) - (a.id ?? 0));
+  }
+  return list;
+});
 
 const showModal = ref(false)
 const editing = ref(false)
@@ -207,4 +240,12 @@ const deleteDepartment = async (id) => {
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 .empty { text-align:center; padding: 2rem 0; color:#555; }
 .empty h3 { margin:0 0 .5rem 0; color:#2c3e50; }
-</style> 
+</style>
+.toolbar { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
+.toolbar .spacer { flex:1; }
+.search { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; min-width: 220px; }
+.sort { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; background:#fff; }
+.btn-primary { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; }
+.btn-primary:hover { opacity:.95; }
+.department-card { transition: box-shadow .15s ease, transform .15s ease; }
+.department-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }

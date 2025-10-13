@@ -1,12 +1,23 @@
 <template>
   <div class="part-list">
     <h2>Parts</h2>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <input
+        v-model.trim="q"
+        @keydown.enter.prevent
+        type="search"
+        class="search"
+        placeholder="Search parts…"
+        aria-label="Search parts"
+      />
+    </div>
       <div v-if="loading" class="skeletons">
         <div class="sk-card" v-for="n in 6" :key="n"></div>
       </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="parts">
-      <div v-for="part in parts" :key="part.id" class="part-card">
+      <div v-for="part in visibleParts" :key="part.id" class="part-card">
         <h3>{{ part.name }}</h3>
         <p>Department ID: {{ part.department_id }}</p>
         <div class="part-actions">
@@ -28,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
 
@@ -40,6 +51,16 @@ const error = ref(null);
 const limit = ref(20);
 const offset = ref(0);
 const moreAvailable = ref(true);
+
+const q = ref('');
+const visibleParts = computed(() => {
+  if (!q.value) return parts.value;
+  const needle = q.value.toLowerCase();
+  return parts.value.filter(p =>
+    p.name?.toLowerCase().includes(needle) ||
+    String(p.department_id ?? '').includes(needle)
+  );
+});
 
 async function loadBatch(reset = false) {
   if (reset) {
@@ -150,4 +171,9 @@ const addDefect = (part) => {
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 .empty { text-align:center; padding: 2rem 0; color:#555; }
 .empty h3 { margin:0 0 .5rem 0; color:#2c3e50; }
-</style> 
+</style>
+.toolbar { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
+.toolbar .spacer { flex:1; }
+.search { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; min-width: 220px; }
+.part-card { transition: box-shadow .15s ease, transform .15s ease; }
+.part-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
