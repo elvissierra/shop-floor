@@ -171,9 +171,15 @@ const deleteDepartment = async (id) => {
 
 .departments {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .department-list { padding: 1.25rem; }
+  .departments { gap: 1.25rem; }
+  .search { min-width: 280px; }
 }
 
 .department-card {

@@ -2,6 +2,7 @@
   <div class="part-list">
     <h2>Parts</h2>
     <div class="toolbar">
+      <button class="btn-primary" @click="openCreate">+ Add Part</button>
       <div class="spacer"></div>
       <input
         v-model.trim="q"
@@ -32,9 +33,31 @@
       <button class="btn-more" @click="loadBatch(true)">Refresh</button>
     </div>
     <div v-if="!loading" class="pager">
-    <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
-    <div v-else class="end">No more parts</div>
-  </div>
+      <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
+      <div v-else class="end">No more parts</div>
+    </div>
+    <Modal v-if="showModal" @cancel="closeModal">
+      <template #title>{{ editing ? 'Edit Part' : 'New Part' }}</template>
+      <form class="form" @submit.prevent="savePart">
+        <div class="field">
+          <label for="pname">Name <span class="req">*</span></label>
+          <input id="pname" v-model.trim="form.name" type="text" required :disabled="submitting" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="pdept">Department</label>
+          <select id="pdept" v-model.number="form.department_id" :disabled="submitting">
+            <option v-for="d in departmentOptions" :key="d.id" :value="d.id">{{ d.title }}</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" @click="closeModal" :disabled="submitting">Cancel</button>
+          <button type="submit" class="btn primary" :disabled="submitting || !form.name">
+            <span v-if="submitting">Saving…</span>
+            <span v-else>Save</span>
+          </button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 
@@ -42,6 +65,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
+import Modal from './Modal.vue'
 
 const { push: toast } = useToast()
 const store = useShopFloorStore();
@@ -61,6 +85,48 @@ const visibleParts = computed(() => {
     String(p.department_id ?? '').includes(needle)
   );
 });
+
+const showModal = ref(false)
+const editing = ref(false)
+const submitting = ref(false)
+const form = ref({ name: '', department_id: null })
+const departmentOptions = ref([])
+const selectedId = ref(null)
+
+function openCreate() {
+  editing.value = false
+  form.value = { name: '', department_id: departmentOptions.value[0]?.id ?? null }
+  showModal.value = true
+}
+function openEdit(part) {
+  editing.value = true
+  form.value = { name: part.name, department_id: part.department_id }
+  selectedId.value = part.id
+  showModal.value = true
+}
+function closeModal() { showModal.value = false }
+
+async function savePart() {
+  try {
+    submitting.value = true
+    if (editing.value && selectedId.value != null) {
+      const updated = await store.updatePart(selectedId.value, form.value)
+      const idx = parts.value.findIndex(p => p.id === selectedId.value)
+      if (idx !== -1) parts.value[idx] = updated
+      toast({ type: 'success', title: 'Part updated', message: updated.name })
+    } else {
+      const created = await store.addPart(form.value)
+      parts.value.unshift(created)
+      toast({ type: 'success', title: 'Part created', message: created.name })
+    }
+    closeModal()
+  } catch (err) {
+    error.value = err.message
+    toast({ type: 'error', title: 'Save failed', message: err.code ? `${err.code}: ${err.message}` : err.message })
+  } finally {
+    submitting.value = false
+  }
+}
 
 async function loadBatch(reset = false) {
   if (reset) {
@@ -84,7 +150,14 @@ async function loadBatch(reset = false) {
   }
 }
 
-onMounted(() => { loadBatch(true); });
+onMounted(async () => {
+  await loadBatch(true);
+  try {
+    departmentOptions.value = await store.fetchDepartments({ limit: 100 });
+  } catch (e) {
+    // ignore; parts page still works without options
+  }
+});
 
 const viewQuality = (part) => {
   console.log('View quality for part:', part);
@@ -102,9 +175,15 @@ const addDefect = (part) => {
 
 .parts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .part-list { padding: 1.25rem; }
+  .parts { gap: 1.25rem; }
+  .search { min-width: 280px; }
 }
 
 .part-card {
@@ -177,3 +256,12 @@ const addDefect = (part) => {
 .search { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; min-width: 220px; }
 .part-card { transition: box-shadow .15s ease, transform .15s ease; }
 .part-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.btn-primary { background: var(--c-primary); color:#fff; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; }
+.btn-primary:hover { opacity:.95; }
+.form { display:flex; flex-direction:column; gap:.75rem; }
+.field { display:flex; flex-direction:column; gap:.25rem; }
+.req { color: var(--c-danger-600); }
+input, select { border:1px solid var(--c-border); border-radius:8px; padding:.5rem .6rem; background:#fff; }
+.actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.5rem; }
+.btn { border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; background:#e5e7eb; }
+.btn.primary { background: var(--c-primary); color:#fff; }

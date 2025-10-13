@@ -9,22 +9,49 @@
       </div>
     </nav>
     <main class="main-content">
-      <router-view />
+      <div class="container">
+        <section v-if="isHome" class="dash-strip" aria-label="Dashboard summary">
+          <div class="dash-card">
+            <div class="dash-kpi">{{ deptCount }}</div>
+            <div class="dash-label">Departments</div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-kpi">{{ partCount }}</div>
+            <div class="dash-label">Parts</div>
+          </div>
+        </section>
+        <router-view />
+      </div>
     </main>
     <Toast />
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useShopFloorStore } from './stores/shopFloor'
 import Toast from './components/Toast.vue'
+
+const route = useRoute()
+const isHome = computed(() => route.path === '/')
+const store = useShopFloorStore()
+const deptCount = computed(() => store.shopFloorData?.departments?.length ?? 0)
+const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
 </script>
 
 <style>
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f6f7f9;
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f6f7f9;
+    min-width: 1024px;
+  }
+
+.container {
+  width: min(1280px, 92vw);
+  margin: 0 auto;
 }
 
 .navbar {
