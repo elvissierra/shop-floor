@@ -21,6 +21,10 @@ class PartType:
     name: str
     department_id: int
 
+    @strawberry.field(name="departmentId")
+    def department_id_camel(self) -> int:
+        return self.department_id
+
 
 @strawberry.type
 class UserType:

@@ -1,28 +1,41 @@
 <template>
   <div class="department-list">
-    <h2>Departments</h2>
+    <PageHeader title="Departments" :subtitle="`${departments.length} total`">
+      <template #actions>
+        <button class="btn-primary" @click="openCreate">+ Add Department</button>
+      </template>
+    </PageHeader>
     <div class="toolbar">
-      <button class="btn-primary" @click="openCreate">+ Add Department</button>
-      <div class="spacer"></div>
-      <input
-        v-model.trim="q"
-        @keydown.enter.prevent
-        type="search"
-        class="search"
-        placeholder="Search departments…"
-        aria-label="Search departments"
-      />
-      <select v-model="sortKey" class="sort" aria-label="Sort departments">
-        <option value="alpha">A → Z</option>
-        <option value="recent">Newest first</option>
-      </select>
-    </div>
+        <div class="spacer"></div>
+        <input
+          v-model.trim="q"
+          @keydown.enter.prevent
+          type="search"
+          class="search"
+          placeholder="Search departments…"
+          aria-label="Search departments"
+        />
+        <select v-model="sortKey" class="sort" aria-label="Sort departments">
+          <option value="alpha">A → Z</option>
+          <option value="recent">Newest first</option>
+        </select>
+      </div>
       <div v-if="loading" class="skeletons">
         <div class="sk-card" v-for="n in 6" :key="n"></div>
       </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="departments">
-      <div v-for="dept in visibleDepartments" :key="dept.id" class="department-card">
+      <div
+        v-for="dept in visibleDepartments"
+        :key="dept.id"
+        class="department-card"
+        tabindex="0"
+        role="button"
+        @click="editDepartment(dept)"
+        @keydown.enter.prevent="editDepartment(dept)"
+        @keydown.space.prevent="editDepartment(dept)"
+        aria-label="Edit department"
+      >
         <h3>{{ dept.title }}</h3>
         <p>{{ dept.description }}</p>
         <div class="department-actions">
@@ -49,6 +62,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import PageHeader from './PageHeader.vue'
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
@@ -166,12 +180,12 @@ const deleteDepartment = async (id) => {
 
 <style scoped>
 .department-list {
-  padding: 1rem;
+  padding: 0 1rem;
 }
 
 .departments {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -229,15 +243,15 @@ const deleteDepartment = async (id) => {
 }
 
 .error {
-  color: #dc3545;
+  color: var(--c-danger-600);
   padding: 1rem;
-  border: 1px solid #dc3545;
+  border: 1px solid var(--c-danger-600);
   border-radius: 4px;
   margin: 1rem 0;
 }
 
 .pager { margin-top: 1rem; display:flex; justify-content:center; }
-.btn-more { background:#2c3e50; color:#fff; border:none; border-radius:6px; padding:0.6rem 1rem; cursor:pointer; }
+.btn-more { background:#1f2937; color:#fff; border:none; border-radius:6px; padding:0.6rem 1rem; cursor:pointer; }
 .btn-more:hover { opacity: .9; }
 .end { color:#888; font-size:.9rem; }
 
@@ -246,12 +260,13 @@ const deleteDepartment = async (id) => {
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 .empty { text-align:center; padding: 2rem 0; color:#555; }
 .empty h3 { margin:0 0 .5rem 0; color:#2c3e50; }
-</style>
 .toolbar { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
 .toolbar .spacer { flex:1; }
 .search { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; min-width: 220px; }
 .sort { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; background:#fff; }
-.btn-primary { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; }
+.btn-primary { background: var(--c-primary); color:#fff; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; }
 .btn-primary:hover { opacity:.95; }
 .department-card { transition: box-shadow .15s ease, transform .15s ease; }
 .department-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.department-card:focus { outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.35); }
+</style>

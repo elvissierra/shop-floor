@@ -30,9 +30,14 @@ async function gql(query, variables = {}) {
   return json.data;
 }
 
-// Map GraphQL snake_case fields directly
+// Map GraphQL part fields, tolerate camelCase or snake_case
 function mapPart(gqlPart) {
-  return { id: gqlPart.id, name: gqlPart.name, department_id: gqlPart.department_id };
+  return {
+    id: gqlPart.id,
+    name: gqlPart.name,
+    // accept either camelCase or snake_case from the API
+    department_id: gqlPart.department_id ?? gqlPart.departmentId
+  };
 }
 
 export const shopFloorService = {
@@ -77,18 +82,23 @@ export const shopFloorService = {
   async getParts({ limit = 50, offset = 0 } = {}) {
     const data = await gql(/* GraphQL */ `
       query GetParts($limit: Int, $offset: Int) {
-        parts(limit: $limit, offset: $offset) { id name department_id }
+        parts(limit: $limit, offset: $offset) { id name departmentId }
       }
     `, { limit, offset });
     return data.parts.map(mapPart);
   },
 
   async createPart(partData) {
+    // send departmentId to GraphQL API
+    const payload = {
+      ...partData,
+      departmentId: partData.department_id ?? partData.departmentId ?? null
+    }
     const data = await gql(/* GraphQL */ `
       mutation CreatePart($data: PartInput!) {
-        addPart(partData: $data) { id name department_id }
+        addPart(partData: $data) { id name departmentId }
       }
-    `, { data: partData });
+    `, { data: payload });
     return mapPart(data.addPart);
   },
   async addPart(partData) {
@@ -100,11 +110,16 @@ export const shopFloorService = {
     const data = await gql(/* GraphQL */ `
       query GetQualitiesByPart($id: Int!) {
         part(id: $id) { id name }
-        qualities { id pass_fail defect_count part_id }
+        qualities { id passFail defectCount partId }
       }
     `, { id: partId });
-    // Placeholder; tailor to your needs
-    return data.qualities.filter(q => q.part_id === partId);
+    const qualities = (data.qualities || []).map(q => ({
+      id: q.id,
+      pass_fail: q.passFail ?? q.pass_fail,
+      defect_count: q.defectCount ?? q.defect_count,
+      part_id: q.partId ?? q.part_id,
+    }));
+    return qualities.filter(q => q.part_id === partId);
   },
 
   // --- Dashboard rollup (used by ShopFloorView) ---
@@ -112,7 +127,7 @@ export const shopFloorService = {
     const data = await gql(/* GraphQL */ `
       query DashboardData {
         departments { id title description }
-        parts { id name department_id }
+        parts { id name departmentId }
       }
     `);
     return {

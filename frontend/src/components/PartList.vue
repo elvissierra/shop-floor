@@ -1,8 +1,12 @@
 <template>
   <div class="part-list">
-    <h2>Parts</h2>
+    <PageHeader title="Parts" :subtitle="`${parts.length} total`">
+      <template #actions>
+        <button class="btn-primary" @click="openCreate">+ Add Part</button>
+      </template>
+    </PageHeader>
+
     <div class="toolbar">
-      <button class="btn-primary" @click="openCreate">+ Add Part</button>
       <div class="spacer"></div>
       <input
         v-model.trim="q"
@@ -13,12 +17,24 @@
         aria-label="Search parts"
       />
     </div>
-      <div v-if="loading" class="skeletons">
-        <div class="sk-card" v-for="n in 6" :key="n"></div>
-      </div>
+
+    <div v-if="loading" class="skeletons">
+      <div class="sk-card" v-for="n in 6" :key="n"></div>
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
+
     <div v-else class="parts">
-      <div v-for="part in visibleParts" :key="part.id" class="part-card">
+      <div
+        v-for="part in visibleParts"
+        :key="part.id"
+        class="part-card"
+        tabindex="0"
+        role="button"
+        @click="openEdit(part)"
+        @keydown.enter.prevent="openEdit(part)"
+        @keydown.space.prevent="openEdit(part)"
+        :aria-label="`Edit part ${part.name}`"
+      >
         <h3>{{ part.name }}</h3>
         <p>Department ID: {{ part.department_id }}</p>
         <div class="part-actions">
@@ -27,15 +43,18 @@
         </div>
       </div>
     </div>
+
     <div v-if="!loading && !error && parts.length === 0" class="empty">
       <h3>No parts yet</h3>
       <p>Add parts via the GraphQL mutation and they will appear here.</p>
       <button class="btn-more" @click="loadBatch(true)">Refresh</button>
     </div>
+
     <div v-if="!loading" class="pager">
       <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
       <div v-else class="end">No more parts</div>
     </div>
+
     <Modal v-if="showModal" @cancel="closeModal">
       <template #title>{{ editing ? 'Edit Part' : 'New Part' }}</template>
       <form class="form" @submit.prevent="savePart">
@@ -66,6 +85,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
+import PageHeader from './PageHeader.vue'
 
 const { push: toast } = useToast()
 const store = useShopFloorStore();
@@ -170,12 +190,12 @@ const addDefect = (part) => {
 
 <style scoped>
 .part-list {
-  padding: 1rem;
+  padding: 0 1rem;
 }
 
 .parts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -203,6 +223,8 @@ const addDefect = (part) => {
   color: #666;
 }
 
+.part-card:focus { outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.35); }
+
 .part-actions {
   display: flex;
   gap: 0.5rem;
@@ -217,12 +239,12 @@ const addDefect = (part) => {
 }
 
 .btn-view {
-  background-color: #42b983;
+  background-color: var(--c-accent);
   color: white;
 }
 
 .btn-add {
-  background-color: #2c3e50;
+  background-color: #1f2937;
   color: white;
 }
 
@@ -233,9 +255,9 @@ const addDefect = (part) => {
 }
 
 .error {
-  color: #dc3545;
+  color: var(--c-danger-600);
   padding: 1rem;
-  border: 1px solid #dc3545;
+  border: 1px solid var(--c-danger-600);
   border-radius: 4px;
   margin: 1rem 0;
 }
@@ -250,7 +272,6 @@ const addDefect = (part) => {
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 .empty { text-align:center; padding: 2rem 0; color:#555; }
 .empty h3 { margin:0 0 .5rem 0; color:#2c3e50; }
-</style>
 .toolbar { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
 .toolbar .spacer { flex:1; }
 .search { border:1px solid #d1d5db; border-radius:8px; padding:.45rem .6rem; min-width: 220px; }
@@ -265,3 +286,4 @@ input, select { border:1px solid var(--c-border); border-radius:8px; padding:.5r
 .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.5rem; }
 .btn { border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; background:#e5e7eb; }
 .btn.primary { background: var(--c-primary); color:#fff; }
+</style>

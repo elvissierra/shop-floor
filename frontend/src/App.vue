@@ -8,8 +8,10 @@
         <router-link to="/parts" class="nav-link">Parts</router-link>
       </div>
     </nav>
-    <main class="main-content">
+    <a href="#main" class="skip">Skip to content</a>
+    <main id="main" class="main-content">
       <div class="container">
+        <Breadcrumbs />
         <section v-if="isHome" class="dash-strip" aria-label="Dashboard summary">
           <div class="dash-card">
             <div class="dash-kpi">{{ deptCount }}</div>
@@ -32,6 +34,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useShopFloorStore } from './stores/shopFloor'
 import Toast from './components/Toast.vue'
+import Breadcrumbs from './components/Breadcrumbs.vue'
 
 const route = useRoute()
 const isHome = computed(() => route.path === '/')
@@ -45,12 +48,13 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-color: #f6f7f9;
+    background-color: var(--c-bg);
     min-width: 1024px;
+    overflow-x: auto;
   }
 
 .container {
-  width: min(1280px, 92vw);
+  width: min(1600px, 96vw);
   margin: 0 auto;
 }
 
@@ -98,4 +102,10 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
   flex: 1;
   padding: 1rem;
 }
+
+/* ensure wide desktop feel and avoid accidental shrinkage by nested views */
+.container > * { max-width: none; }
+
+.skip{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.skip:focus{position:static;width:auto;height:auto;padding:.25rem .5rem;background:#fff;border:1px solid var(--c-border);border-radius:6px;margin:.25rem 1rem}
 </style>
