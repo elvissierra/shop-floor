@@ -52,3 +52,28 @@ a,
      width: 100% !important;
      background: transparent !important;
 }}
+
+/* =========================================
+   Desktop-first layout utilities
+   ========================================= */
+:root{
+  --container-max: 1600px;
+  --container-pad: 16px;
+}
+
+/* Shared container: full-width up to max, centered */
+.container {
+  width: min(var(--container-max), 96vw);
+  margin: 0 auto;
+}
+
+/* Prevent nested views from narrowing the page unintentionally */
+.container > * {
+  max-width: none;
+}
+
+/* Strong focus ring for keyboard users */
+:focus-visible {
+  outline: 3px solid rgba(37,99,235,.45);
+  outline-offset: 2px;
+}

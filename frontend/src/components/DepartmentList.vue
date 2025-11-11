@@ -179,9 +179,6 @@ const deleteDepartment = async (id) => {
 </script>
 
 <style scoped>
-.department-list {
-  padding: 0 1rem;
-}
 
 .departments {
   display: grid;
@@ -191,7 +188,6 @@ const deleteDepartment = async (id) => {
 }
 
 @media (min-width: 1280px) {
-  .department-list { padding: 1.25rem; }
   .departments { gap: 1.25rem; }
   .search { min-width: 280px; }
 }

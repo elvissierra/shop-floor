@@ -36,7 +36,7 @@ function mapPart(gqlPart) {
     id: gqlPart.id,
     name: gqlPart.name,
     // accept either camelCase or snake_case from the API
-    department_id: gqlPart.department_id ?? gqlPart.departmentId
+    departmentId: gqlPart.departmentId ?? gqlPart.department_id ?? null,
   };
 }
 
@@ -92,7 +92,7 @@ export const shopFloorService = {
     // send departmentId to GraphQL API
     const payload = {
       ...partData,
-      departmentId: partData.department_id ?? partData.departmentId ?? null
+      departmentId: partData.departmentId ?? partData.department_id ?? null,
     }
     const data = await gql(/* GraphQL */ `
       mutation CreatePart($data: PartInput!) {

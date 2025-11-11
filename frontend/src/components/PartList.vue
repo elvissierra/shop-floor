@@ -36,7 +36,7 @@
         :aria-label="`Edit part ${part.name}`"
       >
         <h3>{{ part.name }}</h3>
-        <p>Department ID: {{ part.department_id }}</p>
+        <p>Department ID: {{ part.departmentId }}</p>
         <div class="part-actions">
           <button @click="viewQuality(part)" class="btn-view">View Quality</button>
           <button @click="addDefect(part)" class="btn-add">Add Defect</button>
@@ -64,7 +64,7 @@
         </div>
         <div class="field">
           <label for="pdept">Department</label>
-          <select id="pdept" v-model.number="form.department_id" :disabled="submitting">
+          <select id="pdept" v-model.number="form.departmentId" :disabled="submitting">
             <option v-for="d in departmentOptions" :key="d.id" :value="d.id">{{ d.title }}</option>
           </select>
         </div>
@@ -102,25 +102,25 @@ const visibleParts = computed(() => {
   const needle = q.value.toLowerCase();
   return parts.value.filter(p =>
     p.name?.toLowerCase().includes(needle) ||
-    String(p.department_id ?? '').includes(needle)
+    String(p.departmentId ?? '').includes(needle)
   );
 });
 
 const showModal = ref(false)
 const editing = ref(false)
 const submitting = ref(false)
-const form = ref({ name: '', department_id: null })
+const form = ref({ name: '', departmentId: null })
 const departmentOptions = ref([])
 const selectedId = ref(null)
 
 function openCreate() {
   editing.value = false
-  form.value = { name: '', department_id: departmentOptions.value[0]?.id ?? null }
+  form.value = { name: '', departmentId: departmentOptions.value[0]?.id ?? null }
   showModal.value = true
 }
 function openEdit(part) {
   editing.value = true
-  form.value = { name: part.name, department_id: part.department_id }
+  form.value = { name: part.name, departmentId: part.departmentId }
   selectedId.value = part.id
   showModal.value = true
 }
@@ -189,9 +189,6 @@ const addDefect = (part) => {
 </script>
 
 <style scoped>
-.part-list {
-  padding: 0 1rem;
-}
 
 .parts {
   display: grid;
@@ -201,7 +198,6 @@ const addDefect = (part) => {
 }
 
 @media (min-width: 1280px) {
-  .part-list { padding: 1.25rem; }
   .parts { gap: 1.25rem; }
   .search { min-width: 280px; }
 }

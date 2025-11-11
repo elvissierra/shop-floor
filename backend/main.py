@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,13 +19,22 @@ logging.basicConfig(
 )
 log = logging.getLogger("shop-floor")
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+def _as_list(v):
+    if isinstance(v, str):
+        return [s.strip() for s in v.split(",") if s.strip()]
+    return v
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    config=StrawberryConfig(auto_camel_case=True),
+)
 app = FastAPI(title=settings.PROJECT_NAME)
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=_as_list(settings.BACKEND_CORS_ORIGINS),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -93,6 +103,7 @@ def graphql_error_formatter(error):
 graphql_app = GraphQLRouter(
     schema,
     context_getter=get_context,
+    error_formatter=graphql_error_formatter,
 )
 app.include_router(graphql_app, prefix="/graphql")
 

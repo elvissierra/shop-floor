@@ -10,5 +10,4 @@ import PageHeader from '../components/PageHeader.vue'
 </script>
 
 <style scoped>
-.sf { padding: 0 1rem 1rem; }
 </style>

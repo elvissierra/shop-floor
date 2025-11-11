@@ -33,7 +33,7 @@ class Part(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
-    department_id = Column(Integer, ForeignKey("departments.id"))
+    department_id = Column(Integer, ForeignKey("departments.id"), index=True)
 
     defects = relationship("Defect", back_populates="part")
     department = relationship("Department", back_populates="parts")

@@ -53,10 +53,6 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
     overflow-x: auto;
   }
 
-.container {
-  width: min(1600px, 96vw);
-  margin: 0 auto;
-}
 
 .navbar {
   background-color: #111827;
@@ -104,7 +100,6 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
 }
 
 /* ensure wide desktop feel and avoid accidental shrinkage by nested views */
-.container > * { max-width: none; }
 
 .skip{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
 .skip:focus{position:static;width:auto;height:auto;padding:.25rem .5rem;background:#fff;border:1px solid var(--c-border);border-radius:6px;margin:.25rem 1rem}
