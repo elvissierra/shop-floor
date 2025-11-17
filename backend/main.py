@@ -100,11 +100,17 @@ def graphql_error_formatter(error):
     }
 
 
-graphql_app = GraphQLRouter(
-    schema,
-    context_getter=get_context,
-    error_formatter=graphql_error_formatter,
-)
+try:
+    graphql_app = GraphQLRouter(
+        schema,
+        context_getter=get_context,
+        error_formatter=graphql_error_formatter,  # newer Strawberry
+    )
+except TypeError:
+    graphql_app = GraphQLRouter(
+        schema,
+        context_getter=get_context,
+    )
 app.include_router(graphql_app, prefix="/graphql")
 
 
