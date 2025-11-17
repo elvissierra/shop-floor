@@ -1,27 +1,20 @@
 <template>
   <div class="app">
     <nav class="navbar" role="navigation" aria-label="Main">
-      <router-link to="/" class="brand">Shop Floor</router-link>
-      <div class="nav-links">
-        <router-link to="/" class="nav-link" exact>Dashboard</router-link>
-        <router-link to="/departments" class="nav-link">Departments</router-link>
-        <router-link to="/parts" class="nav-link">Parts</router-link>
+      <div class="nav-inner container">
+        <router-link to="/shopfloor" class="brand">Shop Floor</router-link>
+        <div class="nav-links">
+          <router-link to="/" class="nav-link">Dashboard</router-link>
+          <router-link to="/departments" class="nav-link">Departments</router-link>
+          <router-link to="/parts" class="nav-link">Parts</router-link>
+        </div>
       </div>
     </nav>
     <a href="#main" class="skip">Skip to content</a>
     <main id="main" class="main-content">
       <div class="container">
         <Breadcrumbs />
-        <section v-if="isHome" class="dash-strip" aria-label="Dashboard summary">
-          <div class="dash-card">
-            <div class="dash-kpi">{{ deptCount }}</div>
-            <div class="dash-label">Departments</div>
-          </div>
-          <div class="dash-card">
-            <div class="dash-kpi">{{ partCount }}</div>
-            <div class="dash-label">Parts</div>
-          </div>
-        </section>
+        
         <router-view />
       </div>
     </main>
@@ -30,17 +23,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useShopFloorStore } from './stores/shopFloor'
 import Toast from './components/Toast.vue'
 import Breadcrumbs from './components/Breadcrumbs.vue'
-
-const route = useRoute()
-const isHome = computed(() => route.path === '/')
-const store = useShopFloorStore()
-const deptCount = computed(() => store.shopFloorData?.departments?.length ?? 0)
-const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
 </script>
 
 <style>
@@ -90,6 +74,11 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
   color: #fff;
 }
 
+.nav-link.router-link-exact-active {
+  background: #1f2937;
+  color: #fff;
+}
+
 .nav-link:hover {
   color: #fff;
 }
@@ -103,4 +92,12 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
 
 .skip{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
 .skip:focus{position:static;width:auto;height:auto;padding:.25rem .5rem;background:#fff;border:1px solid var(--c-border);border-radius:6px;margin:.25rem 1rem}
+
+.nav-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  margin:0 auto;
+}
 </style>

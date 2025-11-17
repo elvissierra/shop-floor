@@ -77,3 +77,17 @@ a,
   outline: 3px solid rgba(37,99,235,.45);
   outline-offset: 2px;
 }
+
+/* --- Shared buttons --- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:.6rem 1rem;border-radius:.6rem;border:1px solid transparent;
+  text-decoration:none;font-weight:700;line-height:1;
+  transition:transform .05s ease, background-color .15s ease, border-color .15s ease;
+  cursor:pointer;user-select:none;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:#22c55e;border-color:#16a34a;color:#052e16;}
+.btn-primary:hover{background:#16a34a;color:#052e16;}
+.btn-outline{background:transparent;border-color:#ffffffcc;color:#fff;}
+.btn-outline:hover{background:#ffffff1a;}
