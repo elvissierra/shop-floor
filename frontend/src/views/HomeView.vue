@@ -22,6 +22,25 @@
       </div>
     </div>
 
+    <div class="latest">
+      <h2 class="h2">Latest Parts</h2>
+      <div class="list">
+        <div v-if="loadingLatest" class="skeleton-list">
+          <div class="skeleton card" v-for="n in 5" :key="n"></div>
+        </div>
+        <template v-else>
+          <div v-if="latestParts.length === 0" class="muted">No parts yet.</div>
+          <div v-for="p in latestParts" :key="p.id" class="row card">
+            <div class="row-main">
+              <div class="row-title">{{ p.name }}</div>
+              <div class="row-sub">Dept: <span class="badge">{{ p.departmentId ?? '—' }}</span></div>
+            </div>
+            <router-link class="row-cta" to="/parts">Open</router-link>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <div class="feature-grid">
       <div class="card feature">
         <h3 class="feature-title">Fast CRUD</h3>
@@ -42,12 +61,25 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useShopFloorStore } from '../stores/shopFloor'
+import { ref } from 'vue'
+import { shopFloorService } from '../services/api'
 
 
 const store = useShopFloorStore()
 onMounted(() => { if (!store.shopFloorData) store.fetchShopFloorData() })
 const deptCount = computed(() => store.shopFloorData?.departments?.length ?? 0)
 const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
+const latestParts = ref([])
+const loadingLatest = ref(false)
+
+onMounted(async () => {
+  loadingLatest.value = true
+  try {
+    latestParts.value = await shopFloorService.getParts({ limit: 5, offset: 0 })
+  } finally {
+    loadingLatest.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -81,4 +113,18 @@ const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
   .kpis{grid-template-columns:1fr;}
   .feature-grid{grid-template-columns:1fr;}
 }
+
+.h2{margin:.25rem 0 .5rem 0;font-size:1.05rem;color:var(--c-muted);font-weight:800;letter-spacing:.2px;text-transform:uppercase;}
+.list{display:flex;flex-direction:column;gap:.5rem;}
+.row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem .85rem;}
+.row-title{font-weight:800;}
+.row-sub{color:var(--c-muted);font-size:.92rem;}
+.row-cta{white-space:nowrap;text-decoration:none;border:1px solid var(--c-border);padding:.35rem .6rem;border-radius:.5rem;}
+.muted{color:var(--c-muted);}
+.badge{display:inline-block;padding:.1rem .4rem;border:1px solid var(--c-border);border-radius:.4rem;}
+
+/* skeleton shimmer */
+.skeleton{height:58px;border-radius:var(--radius);background:linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.12), rgba(0,0,0,.06));background-size:200% 100%;animation:shimmer 1.1s infinite;}
+.skeleton-list .skeleton{margin-bottom:.5rem;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 </style>
