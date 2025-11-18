@@ -91,3 +91,5 @@ a,
 .btn-primary:hover{background:#16a34a;color:#052e16;}
 .btn-outline{background:transparent;border-color:#ffffffcc;color:#fff;}
 .btn-outline:hover{background:#ffffff1a;}
+
+.h3{font-size:1rem;font-weight:800;margin:.25rem 0 .4rem 0;}

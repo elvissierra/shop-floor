@@ -30,6 +30,26 @@
       </div>
 
       <div class="col">
+        <h2 class="h2">Work Centers</h2>
+        <div class="list">
+          <div v-if="loadingCenters" class="muted">Loading…</div>
+          <template v-else>
+            <div v-if="workCenters.length === 0" class="muted">No work centers yet.</div>
+            <div v-for="wc in workCenters" :key="wc.id" class="row card">
+              <div class="row-main">
+                <div class="row-title">{{ wc.name }}</div>
+                <div class="row-sub">
+                  <span v-if="wc.code">Code: <span class="badge">{{ wc.code }}</span></span>
+                  <span v-else class="muted">No code</span>
+                </div>
+              </div>
+              <router-link class="row-cta" :to="`/departments`">Open Dept</router-link>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="col">
         <h2 class="h2">Recent Parts</h2>
         <div class="list">
           <div v-if="loadingParts" class="muted">Loading…</div>
@@ -45,19 +65,36 @@
           </template>
         </div>
       </div>
+
+      <div class="recent">
+        <h2 class="h2">Recently Viewed</h2>
+        <div class="list">
+          <div v-if="!recentParts || recentParts.length === 0" class="muted">No recently viewed parts.</div>
+          <div v-else v-for="p in recentParts" :key="p.id" class="row card">
+            <div class="row-main">
+              <div class="row-title">{{ p.name }}</div>
+              <div class="row-sub">Dept: <span class="badge">{{ p.departmentId ?? '—' }}</span></div>
+            </div>
+            <router-link class="row-cta" to="/parts">Open</router-link>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useShopFloorStore } from '../stores/shopFloor'
 
 const store = useShopFloorStore()
 const loadingDept = ref(false)
 const loadingParts = ref(false)
+const loadingCenters = ref(false)
 const departments = ref([])
 const parts = ref([])
+const workCenters = ref([])
+const recentParts = computed(() => store.recentParts)
 
 onMounted(async () => {
   loadingDept.value = true
@@ -67,6 +104,13 @@ onMounted(async () => {
   loadingParts.value = true
   try { parts.value = await store.fetchParts({ limit: 5, offset: 0 }) }
   finally { loadingParts.value = false }
+
+  loadingCenters.value = true
+  try { workCenters.value = await store.fetchWorkCenters({ limit: 5, offset: 0 }) }
+  finally { loadingCenters.value = false }
+
+  // load client-side recent parts (if any)
+  store.loadRecentParts?.()
 })
 </script>
 
@@ -80,7 +124,7 @@ onMounted(async () => {
 .title{margin:0;font-size:1.6rem;font-weight:900;color:var(--c-text);}
 .sub{margin:.25rem 0 0 0;color:var(--c-muted);max-width:72ch;}
 .actions{display:flex;gap:.5rem;flex-wrap:wrap;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;}
 .h2{margin:.25rem 0 .5rem 0;font-size:1.05rem;color:var(--c-muted);font-weight:800;letter-spacing:.2px;text-transform:uppercase;}
 .list{display:flex;flex-direction:column;gap:.5rem;}
 .row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem .85rem;}
@@ -94,4 +138,5 @@ onMounted(async () => {
   background:var(--c-surface);border:1px solid var(--c-border);
   border-radius:var(--radius);box-shadow:var(--shadow);
 }
+.recent{margin-top:1rem;}
 </style>

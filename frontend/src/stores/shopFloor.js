@@ -65,6 +65,34 @@ export const useShopFloorStore = defineStore('shopFloor', {
       }
     },
 
+    // Work Center methods
+    async fetchWorkCenters(params = {}) {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.getWorkCenters(params);
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async addWorkCenter(wcData) {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.addWorkCenter(wcData);
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // Part methods
     async fetchParts(params = {}) {
       this.loading = true;

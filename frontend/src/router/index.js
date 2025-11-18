@@ -7,6 +7,7 @@ const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { title: 'Dashboard', breadcrumb: [] } },
   { path: '/departments', name: 'departments', component: DepartmentList, meta: { title: 'Departments', breadcrumb: [{ label: 'Departments' }] } },
   { path: '/parts', name: 'parts', component: PartList, meta: { title: 'Parts', breadcrumb: [{ label: 'Parts' }] } },
+  { path: '/work-centers', name: 'work-centers', component: () => import('../views/WorkCentersView.vue'), meta: { title: 'Work Centers', breadcrumb: [{ label: 'Work Centers' }] } },
   { path: '/shopfloor', name: 'shopfloor', component: () => import('../views/ShopFloorView.vue'), meta: { title: 'Shop Floor', breadcrumb: [{ label: 'Shop Floor' }] }
 },
 ];

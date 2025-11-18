@@ -14,6 +14,22 @@ from app.schema import (
     DefectInput,
     PartInput,
     QualityInput,
+    WorkCenterType,
+    WorkOrderType,
+    WorkOrderOpType,
+    RoutingType,
+    RoutingStepType,
+    BOMType,
+    BOMItemType,
+    ActivityLogType,
+    WorkCenterInput,
+    WorkOrderInput,
+    WorkOrderOpInput,
+    RoutingInput,
+    RoutingStepInput,
+    BOMInput,
+    BOMItemInput,
+    ActivityLogInput,
 )
 from app.api.services import MutationService, QueryService
 
@@ -187,6 +203,104 @@ class Mutation:
         return MutationService(db).delete_quality(id)
 
 
+    @strawberry.mutation
+    def add_work_center(self, data: WorkCenterInput, info) -> WorkCenterType:
+        db: Session = info.context["db"]
+        wc = MutationService(db).add_work_center(data)
+        return WorkCenterType(
+            id=wc.id,
+            name=wc.name,
+            code=wc.code,
+            department_id=wc.department_id,
+        )
+
+    @strawberry.mutation
+    def add_work_order(self, data: WorkOrderInput, info) -> WorkOrderType:
+        db: Session = info.context["db"]
+        wo = MutationService(db).add_work_order(data)
+        return WorkOrderType(
+            id=wo.id,
+            number=wo.number,
+            status=wo.status,
+            quantity=wo.quantity,
+            part_id=wo.part_id,
+            department_id=wo.department_id,
+            work_center_id=wo.work_center_id,
+        )
+
+    @strawberry.mutation
+    def add_work_order_op(self, data: WorkOrderOpInput, info) -> WorkOrderOpType:
+        db: Session = info.context["db"]
+        op = MutationService(db).add_work_order_op(data)
+        return WorkOrderOpType(
+            id=op.id,
+            work_order_id=op.work_order_id,
+            sequence=op.sequence,
+            work_center_id=op.work_center_id,
+            status=op.status,
+        )
+
+    @strawberry.mutation
+    def add_routing(self, data: RoutingInput, info) -> RoutingType:
+        db: Session = info.context["db"]
+        r = MutationService(db).add_routing(data)
+        return RoutingType(
+            id=r.id,
+            name=r.name,
+            part_id=r.part_id,
+            version=r.version,
+        )
+
+    @strawberry.mutation
+    def add_routing_step(self, data: RoutingStepInput, info) -> RoutingStepType:
+        db: Session = info.context["db"]
+        s = MutationService(db).add_routing_step(data)
+        return RoutingStepType(
+            id=s.id,
+            routing_id=s.routing_id,
+            sequence=s.sequence,
+            work_center_id=s.work_center_id,
+            description=s.description,
+            standard_minutes=s.standard_minutes,
+        )
+
+    @strawberry.mutation
+    def add_bom(self, data: BOMInput, info) -> BOMType:
+        db: Session = info.context["db"]
+        b = MutationService(db).add_bom(data)
+        return BOMType(
+            id=b.id,
+            part_id=b.part_id,
+            revision=b.revision,
+        )
+
+    @strawberry.mutation
+    def add_bom_item(self, data: BOMItemInput, info) -> BOMItemType:
+        db: Session = info.context["db"]
+        i = MutationService(db).add_bom_item(data)
+        return BOMItemType(
+            id=i.id,
+            bom_id=i.bom_id,
+            component_part_id=i.component_part_id,
+            quantity=i.quantity,
+        )
+
+    @strawberry.mutation
+    def add_activity_log(self, data: ActivityLogInput, info) -> ActivityLogType:
+        db: Session = info.context["db"]
+        log = MutationService(db).add_activity_log(data)
+        return ActivityLogType(
+            id=log.id,
+            user_id=log.user_id,
+            part_id=log.part_id,
+            department_id=log.department_id,
+            work_order_id=log.work_order_id,
+            event_type=log.event_type,
+            message=log.message,
+            created_at=log.created_at.isoformat() if log.created_at else "",
+        )
+
+
 @strawberry.type
 class Query:
 
@@ -358,3 +472,149 @@ class Query:
             defect_count=quality.defect_count,
             part_id=quality.part_id,
         )
+
+
+    @strawberry.field
+    def work_centers(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[WorkCenterType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        centers = service.get_all_work_centers(limit=limit, offset=offset)
+        return [
+            WorkCenterType(
+                id=wc.id,
+                name=wc.name,
+                code=wc.code,
+                department_id=wc.department_id,
+            )
+            for wc in centers
+        ]
+
+    @strawberry.field
+    def work_orders(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[WorkOrderType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        orders = service.get_all_work_orders(limit=limit, offset=offset)
+        return [
+            WorkOrderType(
+                id=wo.id,
+                number=wo.number,
+                status=wo.status,
+                quantity=wo.quantity,
+                part_id=wo.part_id,
+                department_id=wo.department_id,
+                work_center_id=wo.work_center_id,
+            )
+            for wo in orders
+        ]
+
+    @strawberry.field
+    def work_order_ops(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[WorkOrderOpType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        ops = service.get_all_work_order_ops(limit=limit, offset=offset)
+        return [
+            WorkOrderOpType(
+                id=op.id,
+                work_order_id=op.work_order_id,
+                sequence=op.sequence,
+                work_center_id=op.work_center_id,
+                status=op.status,
+            )
+            for op in ops
+        ]
+
+    @strawberry.field
+    def routings(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[RoutingType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        routings = service.get_all_routings(limit=limit, offset=offset)
+        return [
+            RoutingType(
+                id=r.id,
+                name=r.name,
+                part_id=r.part_id,
+                version=r.version,
+            )
+            for r in routings
+        ]
+
+    @strawberry.field
+    def routing_steps(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[RoutingStepType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        steps = service.get_all_routing_steps(limit=limit, offset=offset)
+        return [
+            RoutingStepType(
+                id=s.id,
+                routing_id=s.routing_id,
+                sequence=s.sequence,
+                work_center_id=s.work_center_id,
+                description=s.description,
+                standard_minutes=s.standard_minutes,
+            )
+            for s in steps
+        ]
+
+    @strawberry.field
+    def boms(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[BOMType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        boms = service.get_all_boms(limit=limit, offset=offset)
+        return [
+            BOMType(
+                id=b.id,
+                part_id=b.part_id,
+                revision=b.revision,
+            )
+            for b in boms
+        ]
+
+    @strawberry.field
+    def bom_items(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[BOMItemType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        items = service.get_all_bom_items(limit=limit, offset=offset)
+        return [
+            BOMItemType(
+                id=i.id,
+                bom_id=i.bom_id,
+                component_part_id=i.component_part_id,
+                quantity=i.quantity,
+            )
+            for i in items
+        ]
+
+    @strawberry.field
+    def activity_logs(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[ActivityLogType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        logs = service.get_all_activity_logs(limit=limit, offset=offset)
+        return [
+            ActivityLogType(
+                id=log.id,
+                user_id=log.user_id,
+                part_id=log.part_id,
+                department_id=log.department_id,
+                work_order_id=log.work_order_id,
+                event_type=log.event_type,
+                message=log.message,
+                created_at=log.created_at.isoformat() if log.created_at else "",
+            )
+            for log in logs
+        ]

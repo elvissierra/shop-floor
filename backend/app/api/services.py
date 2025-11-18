@@ -1,5 +1,22 @@
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
-from models.models import User, Department, DefectCategory, Defect, Part, Quality
+from models.models import (
+    User,
+    Department,
+    DefectCategory,
+    Defect,
+    Part,
+    Quality,
+    WorkCenter,
+    WorkOrder,
+    WorkOrderOp,
+    Routing,
+    RoutingStep,
+    BOM,
+    BOMItem,
+    ActivityLog,
+)
 from strawberry.exceptions import GraphQLError
 from app.schema import (
     UserInput,
@@ -189,6 +206,165 @@ class QualityRepo:
         self.db.commit()
         self.db.refresh(quality)
         return quality
+
+
+class WorkCenterRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkCenter]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(WorkCenter).offset(o).limit(l).all()
+
+    def get(self, work_center_id: int) -> WorkCenter | None:
+        return self.db.get(WorkCenter, work_center_id)
+
+    def create(self, wc: WorkCenter) -> WorkCenter:
+        self.db.add(wc)
+        self.db.commit()
+        self.db.refresh(wc)
+        return wc
+
+    def delete(self, wc: WorkCenter) -> None:
+        self.db.delete(wc)
+        self.db.commit()
+
+
+class WorkOrderRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrder]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(WorkOrder).offset(o).limit(l).all()
+
+    def get(self, work_order_id: int) -> WorkOrder | None:
+        return self.db.get(WorkOrder, work_order_id)
+
+    def create(self, wo: WorkOrder) -> WorkOrder:
+        self.db.add(wo)
+        self.db.commit()
+        self.db.refresh(wo)
+        return wo
+
+    def delete(self, wo: WorkOrder) -> None:
+        self.db.delete(wo)
+        self.db.commit()
+
+
+class WorkOrderOpRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrderOp]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(WorkOrderOp).offset(o).limit(l).all()
+
+    def list_by_work_order(self, work_order_id: int) -> list[WorkOrderOp]:
+        return (
+            self.db.query(WorkOrderOp)
+            .filter(WorkOrderOp.work_order_id == work_order_id)
+            .order_by(WorkOrderOp.sequence)
+            .all()
+        )
+
+    def create(self, op: WorkOrderOp) -> WorkOrderOp:
+        self.db.add(op)
+        self.db.commit()
+        self.db.refresh(op)
+        return op
+
+
+class RoutingRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[Routing]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(Routing).offset(o).limit(l).all()
+
+    def get(self, routing_id: int) -> Routing | None:
+        return self.db.get(Routing, routing_id)
+
+    def create(self, routing: Routing) -> Routing:
+        self.db.add(routing)
+        self.db.commit()
+        self.db.refresh(routing)
+        return routing
+
+
+class RoutingStepRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[RoutingStep]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(RoutingStep).offset(o).limit(l).all()
+
+    def list_by_routing(self, routing_id: int) -> list[RoutingStep]:
+        return (
+            self.db.query(RoutingStep)
+            .filter(RoutingStep.routing_id == routing_id)
+            .order_by(RoutingStep.sequence)
+            .all()
+        )
+
+    def create(self, step: RoutingStep) -> RoutingStep:
+        self.db.add(step)
+        self.db.commit()
+        self.db.refresh(step)
+        return step
+
+
+class BOMRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[BOM]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(BOM).offset(o).limit(l).all()
+
+    def get(self, bom_id: int) -> BOM | None:
+        return self.db.get(BOM, bom_id)
+
+    def create(self, bom: BOM) -> BOM:
+        self.db.add(bom)
+        self.db.commit()
+        self.db.refresh(bom)
+        return bom
+
+
+class BOMItemRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[BOMItem]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(BOMItem).offset(o).limit(l).all()
+
+    def list_by_bom(self, bom_id: int) -> list[BOMItem]:
+        return self.db.query(BOMItem).filter(BOMItem.bom_id == bom_id).all()
+
+    def create(self, item: BOMItem) -> BOMItem:
+        self.db.add(item)
+        self.db.commit()
+        self.db.refresh(item)
+        return item
+
+
+class ActivityLogRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[ActivityLog]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(ActivityLog).offset(o).limit(l).all()
+
+    def create(self, log: ActivityLog) -> ActivityLog:
+        self.db.add(log)
+        self.db.commit()
+        self.db.refresh(log)
+        return log
 
 
 class MutationService:
@@ -409,6 +585,102 @@ class MutationService:
         self.db.delete(quality)
         self.db.commit()
         return True
+    
+    def add_work_center(self, data: WorkCenterInput) -> WorkCenter:
+        wc = WorkCenter(
+            name=data.name,
+            code=data.code,
+            department_id=data.department_id,
+        )
+        self.db.add(wc)
+        self.db.commit()
+        self.db.refresh(wc)
+        return wc
+
+    def add_work_order(self, data: WorkOrderInput) -> WorkOrder:
+        wo = WorkOrder(
+            number=data.number,
+            status=data.status,
+            quantity=data.quantity,
+            part_id=data.part_id,
+            department_id=data.department_id,
+            work_center_id=data.work_center_id,
+        )
+        self.db.add(wo)
+        self.db.commit()
+        self.db.refresh(wo)
+        return wo
+
+    def add_work_order_op(self, data: WorkOrderOpInput) -> WorkOrderOp:
+        op = WorkOrderOp(
+            work_order_id=data.work_order_id,
+            sequence=data.sequence,
+            work_center_id=data.work_center_id,
+            status=data.status,
+        )
+        self.db.add(op)
+        self.db.commit()
+        self.db.refresh(op)
+        return op
+
+    def add_routing(self, data: RoutingInput) -> Routing:
+        routing = Routing(
+            name=data.name,
+            part_id=data.part_id,
+            version=data.version,
+        )
+        self.db.add(routing)
+        self.db.commit()
+        self.db.refresh(routing)
+        return routing
+
+    def add_routing_step(self, data: RoutingStepInput) -> RoutingStep:
+        step = RoutingStep(
+            routing_id=data.routing_id,
+            sequence=data.sequence,
+            work_center_id=data.work_center_id,
+            description=data.description,
+            standard_minutes=data.standard_minutes,
+        )
+        self.db.add(step)
+        self.db.commit()
+        self.db.refresh(step)
+        return step
+
+    def add_bom(self, data: BOMInput) -> BOM:
+        bom = BOM(
+            part_id=data.part_id,
+            revision=data.revision,
+        )
+        self.db.add(bom)
+        self.db.commit()
+        self.db.refresh(bom)
+        return bom
+
+    def add_bom_item(self, data: BOMItemInput) -> BOMItem:
+        item = BOMItem(
+            bom_id=data.bom_id,
+            component_part_id=data.component_part_id,
+            quantity=data.quantity,
+        )
+        self.db.add(item)
+        self.db.commit()
+        self.db.refresh(item)
+        return item
+
+    def add_activity_log(self, data: ActivityLogInput) -> ActivityLog:
+        log = ActivityLog(
+            user_id=data.user_id,
+            part_id=data.part_id,
+            department_id=data.department_id,
+            work_order_id=data.work_order_id,
+            event_type=data.event_type,
+            message=data.message,
+        )
+        self.db.add(log)
+        self.db.commit()
+        self.db.refresh(log)
+        return log
 
 
 class QueryService:
@@ -420,6 +692,14 @@ class QueryService:
         self.defect_categories = DefectCategoryRepo(db)
         self.defects = DefectRepo(db)
         self.qualities = QualityRepo(db)
+        self.work_centers = WorkCenterRepo(db)
+        self.work_orders = WorkOrderRepo(db)
+        self.work_order_ops = WorkOrderOpRepo(db)
+        self.routings = RoutingRepo(db)
+        self.routing_steps = RoutingStepRepo(db)
+        self.boms = BOMRepo(db)
+        self.bom_items = BOMItemRepo(db)
+        self.activity_logs = ActivityLogRepo(db)
 
     # ---- Users ----
     def get_all_users(
@@ -534,3 +814,68 @@ class QueryService:
         if not quality:
             raise GraphQLError(f"Quality for part {part_id} not found", extensions={"code": "NOT_FOUND"})
         return quality
+
+        # ---- Work Centers ----
+    def get_all_work_centers(self, limit: int | None = None, offset: int | None = None) -> list[WorkCenter]:
+        return self.work_centers.list(limit=limit, offset=offset)
+
+    def get_work_center(self, work_center_id: int) -> WorkCenter:
+        wc = self.work_centers.get(work_center_id)
+        if not wc:
+            raise GraphQLError(f"Work center {work_center_id} not found", extensions={"code": "NOT_FOUND"})
+        return wc
+
+    # ---- Work Orders ----
+    def get_all_work_orders(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrder]:
+        return self.work_orders.list(limit=limit, offset=offset)
+
+    def get_work_order(self, work_order_id: int) -> WorkOrder:
+        wo = self.work_orders.get(work_order_id)
+        if not wo:
+            raise GraphQLError(f"Work order {work_order_id} not found", extensions={"code": "NOT_FOUND"})
+        return wo
+
+    # ---- Work Order Ops ----
+    def get_all_work_order_ops(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrderOp]:
+        return self.work_order_ops.list(limit=limit, offset=offset)
+
+    def get_work_order_ops_by_work_order(self, work_order_id: int) -> list[WorkOrderOp]:
+        return self.work_order_ops.list_by_work_order(work_order_id)
+
+    # ---- Routings ----
+    def get_all_routings(self, limit: int | None = None, offset: int | None = None) -> list[Routing]:
+        return self.routings.list(limit=limit, offset=offset)
+
+    def get_routing(self, routing_id: int) -> Routing:
+        r = self.routings.get(routing_id)
+        if not r:
+            raise GraphQLError(f"Routing {routing_id} not found", extensions={"code": "NOT_FOUND"})
+        return r
+
+    # ---- Routing Steps ----
+    def get_all_routing_steps(self, limit: int | None = None, offset: int | None = None) -> list[RoutingStep]:
+        return self.routing_steps.list(limit=limit, offset=offset)
+
+    def get_routing_steps_by_routing(self, routing_id: int) -> list[RoutingStep]:
+        return self.routing_steps.list_by_routing(routing_id)
+
+    # ---- BOMs ----
+    def get_all_boms(self, limit: int | None = None, offset: int | None = None) -> list[BOM]:
+        return self.boms.list(limit=limit, offset=offset)
+
+    def get_bom(self, bom_id: int) -> BOM:
+        b = self.boms.get(bom_id)
+        if not b:
+            raise GraphQLError(f"BOM {bom_id} not found", extensions={"code": "NOT_FOUND"})
+        return b
+
+    # ---- BOM Items ----
+    def get_all_bom_items(self, limit: int | None = None, offset: int | None = None) -> list[BOMItem]:
+        return self.bom_items.list(limit=limit, offset=offset)
+
+    def get_bom_items_by_bom(self, bom_id: int) -> list[BOMItem]:
+        return self.bom_items.list_by_bom(bom_id)
+
+    # ---- Activity Logs ----
+    def get_all_activity_logs(self, limit: int | None = None, offset: int | None = None) -> list[ActivityLog]:
+        return self.activity_logs.list(limit=limit, offset=offset)

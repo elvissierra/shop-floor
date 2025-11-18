@@ -40,6 +40,16 @@ function mapPart(gqlPart) {
   };
 }
 
+function mapWorkCenter(gqlWC) {
+  return {
+    id: gqlWC.id,
+    name: gqlWC.name,
+    code: gqlWC.code ?? null,
+    // accept either camelCase or snake_case from the API
+    departmentId: gqlWC.departmentId ?? gqlWC.department_id ?? null,
+  };
+}
+
 export const shopFloorService = {
   // --- Departments ---
   async getDepartments({ limit = 50, offset = 0 } = {}) {
@@ -76,6 +86,44 @@ export const shopFloorService = {
       }
     `, { id });
     return data.deleteDepartment; // boolean
+  },
+
+  // --- Work Centers ---
+  async getWorkCenters({ limit = 50, offset = 0 } = {}) {
+    const data = await gql(/* GraphQL */ `
+      query GetWorkCenters($limit: Int, $offset: Int) {
+        workCenters(limit: $limit, offset: $offset) {
+          id
+          name
+          code
+          departmentId
+        }
+      }
+    `, { limit, offset });
+    return (data.workCenters || []).map(mapWorkCenter);
+  },
+
+  async createWorkCenter(data) {
+    const payload = {
+      ...data,
+      // normalize departmentId naming across callers
+      departmentId: data.departmentId ?? data.department_id ?? null,
+    };
+    const result = await gql(/* GraphQL */ `
+      mutation AddWorkCenter($data: WorkCenterInput!) {
+        addWorkCenter(data: $data) {
+          id
+          name
+          code
+          departmentId
+        }
+      }
+    `, { data: payload });
+    return mapWorkCenter(result.addWorkCenter);
+  },
+
+  async addWorkCenter(data) {
+    return this.createWorkCenter(data);
   },
 
   // --- Parts ---
@@ -121,6 +169,10 @@ export const shopFloorService = {
     }));
     return qualities.filter(q => q.part_id === partId);
   },
+
+
+  // --- Manufacturing methods removed (not backed by schema) ---
+
 
   // --- Dashboard rollup (used by ShopFloorView) ---
   async getShopFloorData() {
