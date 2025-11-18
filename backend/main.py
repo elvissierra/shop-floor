@@ -78,9 +78,12 @@ def graphql_error_formatter(error):
     original = getattr(error, "original_error", None) or error
     message = str(original) if original else str(error)
 
-    code = "INTERNAL_SERVER_ERROR"
-    # Convention: prefix messages in services with "NOT_FOUND:", "CONFLICT:", "VALIDATION:"
-    if isinstance(message, str):
+    # Prefer an explicit extensions.code if provided on the original error
+    ext = getattr(original, "extensions", None) or getattr(error, "extensions", None) or {}
+    code = ext.get("code")
+
+    # If no explicit code, fall back to the prefix convention
+    if not code and isinstance(message, str):
         if message.startswith("NOT_FOUND:"):
             code = "NOT_FOUND"
             message = message.split(":", 1)[1].strip()
@@ -90,6 +93,9 @@ def graphql_error_formatter(error):
         elif message.startswith("VALIDATION:"):
             code = "BAD_REQUEST"
             message = message.split(":", 1)[1].strip()
+
+    if not code:
+        code = "INTERNAL_SERVER_ERROR"
 
     # Build a GraphQL-compliant error dict with extensions.code
     return {

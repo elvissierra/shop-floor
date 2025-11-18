@@ -20,17 +20,19 @@ from models.models import (
 from strawberry.exceptions import GraphQLError
 from app.schema import (
     UserInput,
-    UserType,
     DepartmentInput,
-    DepartmentType,
     DefectCategoryInput,
-    DefectCategoryType,
     DefectInput,
-    DefectType,
     PartInput,
-    PartType,
     QualityInput,
-    QualityType,
+    WorkCenterInput,
+    WorkOrderInput,
+    WorkOrderOpInput,
+    RoutingInput,
+    RoutingStepInput,
+    BOMInput,
+    BOMItemInput,
+    ActivityLogInput,
 )
 
 # --- Pagination helper ---
@@ -587,6 +589,19 @@ class MutationService:
         return True
     
     def add_work_center(self, data: WorkCenterInput) -> WorkCenter:
+        # Optional uniqueness check on code to avoid DB integrity errors
+        if data.code:
+            existing = (
+                self.db.query(WorkCenter)
+                .filter(WorkCenter.code == data.code)
+                .first()
+            )
+            if existing:
+                raise GraphQLError(
+                    "Work center code already exists; check code.",
+                    extensions={"code": "CONFLICT"},
+                )
+
         wc = WorkCenter(
             name=data.name,
             code=data.code,
@@ -598,13 +613,48 @@ class MutationService:
         return wc
 
     def add_work_order(self, data: WorkOrderInput) -> WorkOrder:
+        # Enforce unique work order number at the service layer
+        existing = (
+            self.db.query(WorkOrder)
+            .filter(WorkOrder.number == data.number)
+            .first()
+        )
+        if existing:
+            raise GraphQLError(
+                "Work order already exists; check number.",
+                extensions={"code": "CONFLICT"},
+            )
+
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        # Default department to the part's department if not explicitly provided
+        department_id = (
+            data.department_id
+            if data.department_id is not None
+            else part.department_id
+        )
+
+        work_center_id = data.work_center_id
+        if work_center_id is not None:
+            wc = self.db.get(WorkCenter, work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
         wo = WorkOrder(
             number=data.number,
             status=data.status,
             quantity=data.quantity,
             part_id=data.part_id,
-            department_id=data.department_id,
-            work_center_id=data.work_center_id,
+            department_id=department_id,
+            work_center_id=work_center_id,
         )
         self.db.add(wo)
         self.db.commit()
@@ -612,10 +662,26 @@ class MutationService:
         return wo
 
     def add_work_order_op(self, data: WorkOrderOpInput) -> WorkOrderOp:
+        wo = self.db.get(WorkOrder, data.work_order_id)
+        if not wo:
+            raise GraphQLError(
+                f"Work order {data.work_order_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        work_center_id = data.work_center_id
+        if work_center_id is not None:
+            wc = self.db.get(WorkCenter, work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
         op = WorkOrderOp(
             work_order_id=data.work_order_id,
             sequence=data.sequence,
-            work_center_id=data.work_center_id,
+            work_center_id=work_center_id,
             status=data.status,
         )
         self.db.add(op)
@@ -624,6 +690,13 @@ class MutationService:
         return op
 
     def add_routing(self, data: RoutingInput) -> Routing:
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
         routing = Routing(
             name=data.name,
             part_id=data.part_id,
@@ -635,10 +708,26 @@ class MutationService:
         return routing
 
     def add_routing_step(self, data: RoutingStepInput) -> RoutingStep:
+        routing = self.db.get(Routing, data.routing_id)
+        if not routing:
+            raise GraphQLError(
+                f"Routing {data.routing_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        work_center_id = data.work_center_id
+        if work_center_id is not None:
+            wc = self.db.get(WorkCenter, work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
         step = RoutingStep(
             routing_id=data.routing_id,
             sequence=data.sequence,
-            work_center_id=data.work_center_id,
+            work_center_id=work_center_id,
             description=data.description,
             standard_minutes=data.standard_minutes,
         )
@@ -648,6 +737,13 @@ class MutationService:
         return step
 
     def add_bom(self, data: BOMInput) -> BOM:
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
         bom = BOM(
             part_id=data.part_id,
             revision=data.revision,
@@ -658,6 +754,20 @@ class MutationService:
         return bom
 
     def add_bom_item(self, data: BOMItemInput) -> BOMItem:
+        bom = self.db.get(BOM, data.bom_id)
+        if not bom:
+            raise GraphQLError(
+                f"BOM {data.bom_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        component_part = self.db.get(Part, data.component_part_id)
+        if not component_part:
+            raise GraphQLError(
+                f"Part {data.component_part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
         item = BOMItem(
             bom_id=data.bom_id,
             component_part_id=data.component_part_id,
@@ -681,6 +791,7 @@ class MutationService:
         self.db.commit()
         self.db.refresh(log)
         return log
+
 
 
 class QueryService:
@@ -879,3 +990,9 @@ class QueryService:
     # ---- Activity Logs ----
     def get_all_activity_logs(self, limit: int | None = None, offset: int | None = None) -> list[ActivityLog]:
         return self.activity_logs.list(limit=limit, offset=offset)
+    
+    def get_activity_logs_for_work_order(
+        self, work_order_id: int
+    ) -> list[ActivityLog]:
+        logs = self.activity_logs.list(limit=None, offset=None)
+        return [log for log in logs if log.work_order_id == work_order_id]
