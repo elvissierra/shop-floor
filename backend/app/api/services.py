@@ -16,6 +16,8 @@ from models.models import (
     BOM,
     BOMItem,
     ActivityLog,
+    Floor,
+    FloorZone,
 )
 from strawberry.exceptions import GraphQLError
 from app.schema import (
@@ -33,7 +35,58 @@ from app.schema import (
     BOMInput,
     BOMItemInput,
     ActivityLogInput,
+    FloorInput,
+    FloorZoneInput,
 )
+class FloorRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[Floor]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(Floor).offset(o).limit(l).all()
+
+    def get(self, floor_id: int) -> Floor | None:
+        return self.db.get(Floor, floor_id)
+
+    def create(self, floor: Floor) -> Floor:
+        self.db.add(floor)
+        self.db.commit()
+        self.db.refresh(floor)
+        return floor
+
+    def delete(self, floor: Floor) -> None:
+        self.db.delete(floor)
+        self.db.commit()
+
+
+class FloorZoneRepo:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list(self, limit: int | None = None, offset: int | None = None) -> list[FloorZone]:
+        l, o = _coerce_pagination(limit, offset)
+        return self.db.query(FloorZone).offset(o).limit(l).all()
+
+    def list_by_floor(self, floor_id: int) -> list[FloorZone]:
+        return (
+            self.db.query(FloorZone)
+            .filter(FloorZone.floor_id == floor_id)
+            .all()
+        )
+
+    def get(self, zone_id: int) -> FloorZone | None:
+        return self.db.get(FloorZone, zone_id)
+
+    def create(self, zone: FloorZone) -> FloorZone:
+        self.db.add(zone)
+        self.db.commit()
+        self.db.refresh(zone)
+        return zone
+
+    def delete(self, zone: FloorZone) -> None:
+        self.db.delete(zone)
+        self.db.commit()
 
 # --- Pagination helper ---
 DEFAULT_LIMIT = 50
@@ -370,6 +423,160 @@ class ActivityLogRepo:
 
 
 class MutationService:
+
+    # ---- Floor: CRUD for shop-floor layouts ----
+    def add_floor(self, data: FloorInput) -> Floor:
+        existing = (
+            self.db.query(Floor)
+            .filter(Floor.name == data.name)
+            .first()
+        )
+        if existing:
+            raise GraphQLError(
+                "Floor already exists; check name.",
+                extensions={"code": "CONFLICT"},
+            )
+
+        floor = Floor(
+            name=data.name,
+            description=data.description,
+        )
+        self.db.add(floor)
+        self.db.commit()
+        self.db.refresh(floor)
+        return floor
+
+    def update_floor(self, floor_id: int, data: FloorInput) -> Floor:
+        floor = self.db.get(Floor, floor_id)
+        if not floor:
+            raise GraphQLError(
+                f"Floor {floor_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        if data.name and data.name != floor.name:
+            exists = (
+                self.db.query(Floor)
+                .filter(Floor.name == data.name)
+                .first()
+            )
+            if exists:
+                raise GraphQLError(
+                    "Floor already exists; check name.",
+                    extensions={"code": "CONFLICT"},
+                )
+
+        floor.name = data.name
+        floor.description = data.description
+        self.db.commit()
+        self.db.refresh(floor)
+        return floor
+
+    def delete_floor(self, floor_id: int) -> bool:
+        floor = self.db.get(Floor, floor_id)
+        if not floor:
+            raise GraphQLError(
+                f"Floor {floor_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(floor)
+        self.db.commit()
+        return True
+
+    # ---- Floor Zones: CRUD for interactive SVG regions ----
+    def add_floor_zone(self, data: FloorZoneInput) -> FloorZone:
+        floor = self.db.get(Floor, data.floor_id)
+        if not floor:
+            raise GraphQLError(
+                f"Floor {data.floor_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        if data.department_id is not None:
+            dept = self.db.get(Department, data.department_id)
+            if not dept:
+                raise GraphQLError(
+                    f"Department {data.department_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
+        if data.work_center_id is not None:
+            wc = self.db.get(WorkCenter, data.work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {data.work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
+        zone = FloorZone(
+            floor_id=data.floor_id,
+            name=data.name,
+            zone_type=data.zone_type,
+            department_id=data.department_id,
+            work_center_id=data.work_center_id,
+            polygon=data.polygon,
+        )
+        self.db.add(zone)
+        self.db.commit()
+        self.db.refresh(zone)
+        return zone
+
+    def update_floor_zone(self, zone_id: int, data: FloorZoneInput) -> FloorZone:
+        zone = self.db.get(FloorZone, zone_id)
+        if not zone:
+            raise GraphQLError(
+                f"Floor zone {zone_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+
+        if data.floor_id != zone.floor_id:
+            floor = self.db.get(Floor, data.floor_id)
+            if not floor:
+                raise GraphQLError(
+                    f"Floor {data.floor_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+            zone.floor_id = data.floor_id
+
+        if data.department_id is not None:
+            dept = self.db.get(Department, data.department_id)
+            if not dept:
+                raise GraphQLError(
+                    f"Department {data.department_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+            zone.department_id = data.department_id
+        else:
+            zone.department_id = None
+
+        if data.work_center_id is not None:
+            wc = self.db.get(WorkCenter, data.work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {data.work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+            zone.work_center_id = data.work_center_id
+        else:
+            zone.work_center_id = None
+
+        zone.name = data.name
+        zone.zone_type = data.zone_type
+        zone.polygon = data.polygon
+        self.db.commit()
+        self.db.refresh(zone)
+        return zone
+
+    def delete_floor_zone(self, zone_id: int) -> bool:
+        zone = self.db.get(FloorZone, zone_id)
+        if not zone:
+            raise GraphQLError(
+                f"Floor zone {zone_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(zone)
+        self.db.commit()
+        return True
     def __init__(self, db: Session):
         self.db = db
 
@@ -440,9 +647,19 @@ class MutationService:
         return part
 
     def add_defect_category(self, def_cat_data: DefectCategoryInput) -> DefectCategory:
+        # Validate department exists to avoid raw FK errors
+        department_id = def_cat_data.department_id
+        if department_id is not None:
+            dept = self.db.get(Department, department_id)
+            if not dept:
+                raise GraphQLError(
+                    f"Department {department_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
         defect_category = DefectCategory(
             title=def_cat_data.title,
-            department_id=def_cat_data.department_id,
+            department_id=department_id,
         )
         self.db.add(defect_category)
         self.db.commit()
@@ -602,10 +819,20 @@ class MutationService:
                     extensions={"code": "CONFLICT"},
                 )
 
+        # Validate department if provided to avoid raw FK errors
+        department_id = data.department_id
+        if department_id is not None:
+            dept = self.db.get(Department, department_id)
+            if not dept:
+                raise GraphQLError(
+                    f"Department {department_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+
         wc = WorkCenter(
             name=data.name,
             code=data.code,
-            department_id=data.department_id,
+            department_id=department_id,
         )
         self.db.add(wc)
         self.db.commit()
@@ -811,6 +1038,8 @@ class QueryService:
         self.boms = BOMRepo(db)
         self.bom_items = BOMItemRepo(db)
         self.activity_logs = ActivityLogRepo(db)
+        self.floors = FloorRepo(db)
+        self.floor_zones = FloorZoneRepo(db)
 
     # ---- Users ----
     def get_all_users(
@@ -996,3 +1225,26 @@ class QueryService:
     ) -> list[ActivityLog]:
         logs = self.activity_logs.list(limit=None, offset=None)
         return [log for log in logs if log.work_order_id == work_order_id]
+
+    # ---- Floors & Floor Zones (shop-floor layouts) ----
+    def get_all_floors(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[Floor]:
+        return self.floors.list(limit=limit, offset=offset)
+
+    def get_floor(self, floor_id: int) -> Floor:
+        floor = self.floors.get(floor_id)
+        if not floor:
+            raise GraphQLError(
+                f"Floor {floor_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        return floor
+
+    def get_all_floor_zones(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[FloorZone]:
+        return self.floor_zones.list(limit=limit, offset=offset)
+
+    def get_floor_zones_by_floor(self, floor_id: int) -> list[FloorZone]:
+        return self.floor_zones.list_by_floor(floor_id)

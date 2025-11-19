@@ -22,6 +22,8 @@ from app.schema import (
     BOMType,
     BOMItemType,
     ActivityLogType,
+    FloorType,
+    FloorZoneType,
     WorkCenterInput,
     WorkOrderInput,
     WorkOrderOpInput,
@@ -30,12 +32,74 @@ from app.schema import (
     BOMInput,
     BOMItemInput,
     ActivityLogInput,
+    FloorInput,
+    FloorZoneInput,
 )
 from app.api.services import MutationService, QueryService
 
 
 @strawberry.type
 class Mutation:
+
+    # ---- Floors (shop-floor layouts) ----
+    @strawberry.mutation
+    def add_floor(self, data: FloorInput, info) -> FloorType:
+        db: Session = info.context["db"]
+        floor = MutationService(db).add_floor(data)
+        return FloorType(
+            id=floor.id,
+            name=floor.name,
+            description=floor.description,
+        )
+
+    @strawberry.mutation
+    def update_floor(self, id: int, data: FloorInput, info) -> FloorType:
+        db: Session = info.context["db"]
+        floor = MutationService(db).update_floor(id, data)
+        return FloorType(
+            id=floor.id,
+            name=floor.name,
+            description=floor.description,
+        )
+
+    @strawberry.mutation
+    def delete_floor(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_floor(id)
+
+    # ---- Floor Zones (SVG regions) ----
+    @strawberry.mutation
+    def add_floor_zone(self, data: FloorZoneInput, info) -> FloorZoneType:
+        db: Session = info.context["db"]
+        zone = MutationService(db).add_floor_zone(data)
+        return FloorZoneType(
+            id=zone.id,
+            floor_id=zone.floor_id,
+            name=zone.name,
+            zone_type=zone.zone_type,
+            department_id=zone.department_id,
+            work_center_id=zone.work_center_id,
+            polygon=zone.polygon,
+        )
+
+    @strawberry.mutation
+    def update_floor_zone(self, id: int, data: FloorZoneInput, info) -> FloorZoneType:
+        db: Session = info.context["db"]
+        zone = MutationService(db).update_floor_zone(id, data)
+        return FloorZoneType(
+            id=zone.id,
+            floor_id=zone.floor_id,
+            name=zone.name,
+            zone_type=zone.zone_type,
+            department_id=zone.department_id,
+            work_center_id=zone.work_center_id,
+            polygon=zone.polygon,
+        )
+
+    @strawberry.mutation
+    def delete_floor_zone(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_floor_zone(id)
     @strawberry.mutation
     def add_user(self, user_data: UserInput, info) -> UserType:
         db = info.context.get("db")
@@ -617,4 +681,56 @@ class Query:
                 created_at=log.created_at.isoformat() if log.created_at else "",
             )
             for log in logs
+        ]
+    @strawberry.field
+    def floors(
+        self, info, limit: int | None = None, offset: int | None = None
+    ) -> List[FloorType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        floors = service.get_all_floors(limit=limit, offset=offset)
+        return [
+            FloorType(
+                id=f.id,
+                name=f.name,
+                description=f.description,
+            )
+            for f in floors
+        ]
+
+    @strawberry.field
+    def floor(self, info, id: int) -> FloorType:
+        db: Session = info.context["db"]
+        f = QueryService(db).get_floor(id)
+        return FloorType(
+            id=f.id,
+            name=f.name,
+            description=f.description,
+        )
+
+    @strawberry.field
+    def floor_zones(
+        self,
+        info,
+        floor_id: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> List[FloorZoneType]:
+        db: Session = info.context.get("db")
+        service = QueryService(db)
+        if floor_id is not None:
+            zones = service.get_floor_zones_by_floor(floor_id)
+        else:
+            zones = service.get_all_floor_zones(limit=limit, offset=offset)
+        return [
+            FloorZoneType(
+                id=z.id,
+                floor_id=z.floor_id,
+                name=z.name,
+                zone_type=z.zone_type,
+                department_id=z.department_id,
+                work_center_id=z.work_center_id,
+                polygon=z.polygon,
+            )
+            for z in zones
         ]

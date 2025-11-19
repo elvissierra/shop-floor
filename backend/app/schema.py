@@ -1,6 +1,22 @@
 import strawberry
 from typing import Optional
+from typing import List
+@strawberry.type
+class FloorType:
+    id: int
+    name: str
+    description: Optional[str]
 
+
+@strawberry.type
+class FloorZoneType:
+    id: int
+    floor_id: int
+    name: str
+    zone_type: Optional[str]
+    department_id: Optional[int]
+    work_center_id: Optional[int]
+    polygon: str
 
 @strawberry.type
 class DepartmentType:
@@ -225,3 +241,20 @@ class ActivityLogInput:
     work_order_id: Optional[int] = None
     event_type: str
     message: Optional[str] = None
+
+
+# --- Floor and FloorZone inputs ---
+@strawberry.input
+class FloorInput:
+    name: str
+    description: Optional[str] = None
+
+
+@strawberry.input
+class FloorZoneInput:
+    floor_id: int
+    name: str
+    zone_type: Optional[str] = None
+    department_id: Optional[int] = None
+    work_center_id: Optional[int] = None
+    polygon: str

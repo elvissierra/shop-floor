@@ -27,6 +27,7 @@ class Department(Base):
     users = relationship("User", back_populates="department")
     parts = relationship("Part", back_populates="department")
     work_centers = relationship("WorkCenter", back_populates="department")
+    floor_zones = relationship("FloorZone", back_populates="department")
 
 
 class Part(Base):
@@ -90,6 +91,7 @@ class WorkCenter(Base):
     work_orders = relationship("WorkOrder", back_populates="work_center")
     operations = relationship("WorkOrderOp", back_populates="work_center")
     routing_steps = relationship("RoutingStep", back_populates="work_center")
+    floor_zones = relationship("FloorZone", back_populates="work_center")
 
 
 class WorkOrder(Base):
@@ -190,3 +192,32 @@ class ActivityLog(Base):
     part = relationship("Part", back_populates="activity_logs")
     department = relationship("Department")
     work_order = relationship("WorkOrder", back_populates="activity_logs")
+
+
+# ---- Floor and FloorZone models ----
+class Floor(Base):
+    __tablename__ = "floors"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255))
+
+    zones = relationship("FloorZone", back_populates="floor", cascade="all, delete-orphan")
+
+
+class FloorZone(Base):
+    __tablename__ = "floor_zones"
+
+    id = Column(Integer, primary_key=True)
+    floor_id = Column(Integer, ForeignKey("floors.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    # Semantic type of the zone, e.g. 'department', 'work_center', 'storage'
+    zone_type = Column(String(50), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    work_center_id = Column(Integer, ForeignKey("work_centers.id"), nullable=True)
+    # Simple, DB-agnostic encoding of the polygon: "x1,y1 x2,y2 ..."
+    polygon = Column(String(2000), nullable=False)
+
+    floor = relationship("Floor", back_populates="zones")
+    department = relationship("Department", back_populates="floor_zones")
+    work_center = relationship("WorkCenter", back_populates="floor_zones")
