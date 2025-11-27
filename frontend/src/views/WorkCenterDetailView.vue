@@ -46,8 +46,17 @@
               <span class="wo-status">{{ wo.status }}</span>
             </div>
             <div class="row-sub">
-              Qty: {{ wo.quantity }} • Part {{ wo.partId }}
-            </div>
+                Qty: {{ wo.quantity }}
+                <span v-if="wo.partId">
+                  • Part
+                  <button
+                    class="link-chip"
+                    @click.stop="goToPart(wo.partId)"
+                  >
+                    #{{ wo.partId }}
+                  </button>
+                </span>
+              </div>
           </li>
         </ul>
       </div>
@@ -186,6 +195,10 @@ function goBack() {
 function goToFloorMap() {
   if (!workCenterId) return;
   router.push({ name: "floor-map", query: { workCenterId } });
+}
+
+function goToPart(id: number) {
+  router.push({ name: "part-detail", params: { id } });
 }
 
 async function loadData() {
@@ -373,6 +386,19 @@ onMounted(loadData);
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
   border: 1px solid #ccc;
+}
+
+.link-chip {
+  border: none;
+  background: none;
+  color: #1976d2;
+  padding: 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.link-chip:hover {
+  text-decoration: underline;
 }
 
 .status {

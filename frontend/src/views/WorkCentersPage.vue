@@ -7,6 +7,7 @@
           {{ centers.length }} total
         </p>
       </div>
+      <button class="btn-primary" @click="openCreate">+ Add Work Center</button>
     </header>
 
     <section class="content">
@@ -38,6 +39,63 @@
         </tbody>
       </table>
     </section>
+    <Modal v-if="showModal" @cancel="closeModal">
+      <template #title>New Work Center</template>
+      <form class="form" @submit.prevent="saveWorkCenter">
+        <div class="field">
+          <label for="wc-name">Name <span class="req">*</span></label>
+          <input
+            id="wc-name"
+            v-model.trim="form.name"
+            type="text"
+            required
+            :disabled="submitting"
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label for="wc-code">Code</label>
+          <input
+            id="wc-code"
+            v-model.trim="form.code"
+            type="text"
+            :disabled="submitting"
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label for="wc-dept">Department</label>
+          <select
+            id="wc-dept"
+            v-model.number="form.departmentId"
+            :disabled="submitting"
+          >
+            <option :value="null">Unassigned</option>
+            <option v-for="d in departmentOptions" :key="d.id" :value="d.id">
+              {{ d.title }}
+            </option>
+          </select>
+        </div>
+        <div class="actions">
+          <button
+            type="button"
+            class="btn"
+            @click="closeModal"
+            :disabled="submitting"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn primary"
+            :disabled="submitting || !form.name"
+          >
+            <span v-if="submitting">Saving…</span>
+            <span v-else>Save</span>
+          </button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 
@@ -45,6 +103,8 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { fetchGraphQL } from "@/services/graphql";
+import Modal from "@/components/Modal.vue";
+import { useToast } from "../composables/useToast";
 
 type WorkCenter = {
   id: number;
@@ -53,10 +113,34 @@ type WorkCenter = {
   departmentId: number | null;
 };
 
+type Department = {
+  id: number;
+  title: string;
+};
+
 const router = useRouter();
 const centers = ref<WorkCenter[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
+
+const { push: toast } = useToast();
+
+const showModal = ref(false);
+const submitting = ref(false);
+
+type WorkCenterForm = {
+  name: string;
+  code: string;
+  departmentId: number | null;
+};
+
+const form = ref<WorkCenterForm>({
+  name: "",
+  code: "",
+  departmentId: null,
+});
+
+const departmentOptions = ref<Department[]>([]);
 
 async function loadWorkCenters() {
   loading.value = true;
@@ -85,11 +169,90 @@ async function loadWorkCenters() {
   }
 }
 
+async function loadDepartments() {
+  const query = `
+    query DepartmentsForWorkCenters {
+      departments {
+        id
+        title
+      }
+    }
+  `;
+
+  try {
+    type Response = { departments: Department[] };
+    const data = await fetchGraphQL<Response>(query);
+    departmentOptions.value = data.departments ?? [];
+  } catch (err: any) {
+    // Work centers list still functions without department options for the modal
+    console.error(err);
+  }
+}
+
+function openCreate() {
+  form.value = {
+    name: "",
+    code: "",
+    departmentId: departmentOptions.value[0]?.id ?? null,
+  };
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+}
+
+async function saveWorkCenter() {
+  try {
+    submitting.value = true;
+    const mutation = `
+      mutation AddWorkCenter($data: WorkCenterInput!) {
+        addWorkCenter(data: $data) {
+          id
+          name
+          code
+          departmentId
+        }
+      }
+    `;
+
+    const payload = {
+      name: form.value.name,
+      code: form.value.code || null,
+      departmentId: form.value.departmentId ?? null,
+    };
+
+    type Response = { addWorkCenter: WorkCenter };
+    const data = await fetchGraphQL<Response>(mutation, { data: payload });
+
+    centers.value.unshift(data.addWorkCenter);
+    toast({
+      type: "success",
+      title: "Work center created",
+      message: data.addWorkCenter.name,
+    });
+    closeModal();
+  } catch (err: any) {
+    console.error(err);
+    const message = err?.message ?? String(err);
+    errorMessage.value = message;
+    toast({
+      type: "error",
+      title: "Save failed",
+      message: err?.code ? `${err.code}: ${message}` : message,
+    });
+  } finally {
+    submitting.value = false;
+  }
+}
+
 function goToDetail(id: number) {
   router.push({ name: "work-center-detail", params: { id } });
 }
 
-onMounted(loadWorkCenters);
+onMounted(async () => {
+  await Promise.all([loadWorkCenters(), loadDepartments()]);
+});
 </script>
 
 <style scoped>
@@ -104,6 +267,20 @@ onMounted(loadWorkCenters);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+}
+
+.btn-primary {
+  background: var(--c-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-primary:hover {
+  opacity: 0.95;
 }
 
 .subtitle {
@@ -152,5 +329,49 @@ onMounted(loadWorkCenters);
 
 .status-error {
   color: #b00020;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.req {
+  color: var(--c-danger-600);
+}
+
+.form input,
+.form select {
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #fff;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  background: #e5e7eb;
+}
+
+.btn.primary {
+  background: var(--c-primary);
+  color: #fff;
 }
 </style>
