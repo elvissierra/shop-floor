@@ -31,16 +31,16 @@
         class="department-card"
         tabindex="0"
         role="button"
-        @click="editDepartment(dept)"
-        @keydown.enter.prevent="editDepartment(dept)"
-        @keydown.space.prevent="editDepartment(dept)"
-        aria-label="Edit department"
+        @click="goToDepartment(dept.id)"
+        @keydown.enter.prevent="goToDepartment(dept.id)"
+        @keydown.space.prevent="goToDepartment(dept.id)"
+        aria-label="View department"
       >
         <h3>{{ dept.title }}</h3>
         <p>{{ dept.description }}</p>
         <div class="department-actions">
-          <button @click="editDepartment(dept)" class="btn-edit">Edit</button>
-          <button @click="deleteDepartment(dept.id)" class="btn-delete">Delete</button>
+          <button @click.stop="editDepartment(dept)" class="btn-edit">Edit</button>
+          <button @click.stop="deleteDepartment(dept.id)" class="btn-delete">Delete</button>
         </div>
       </div>
     </div>
@@ -68,6 +68,9 @@ import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
 import DepartmentForm from './DepartmentForm.vue'
 import { shopFloorService } from '../services/api'
+// Inside DepartmentList.vue <script setup>
+import { useRouter } from "vue-router";
+const router = useRouter();
 
 const { push: toast } = useToast()
 const store = useShopFloorStore();
@@ -137,6 +140,10 @@ async function saveDepartment() {
   } finally {
     submitting.value = false
   }
+}
+
+function goToDepartment(id) {
+  router.push({ name: "department-detail", params: { id } });
 }
 
 async function loadBatch(reset = false) {

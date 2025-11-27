@@ -26,6 +26,10 @@
     </header>
 
     <section class="floor-map-body">
+          <div v-if="loading" class="status">Loading floor layout…</div>
+          <div v-else-if="errorMessage" class="status status-error">
+            {{ errorMessage }}
+          </div>
       <div class="floor-map-legend">
         <h2>Legend</h2>
         <ul>
@@ -73,7 +77,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { fetchGraphQL } from "@/services/graphql";
 
 type Floor = {
   id: number;
@@ -91,11 +96,13 @@ type FloorZone = {
   polygon: string; // "x1,y1 x2,y2 ..."
 };
 
+const route = useRoute();
 const router = useRouter();
 
 const floors = ref<Floor[]>([]);
 const floorZones = ref<FloorZone[]>([]);
 const selectedFloorId = ref<number | null>(null);
+const highlightedWorkCenterId = ref<number | null>(null);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
@@ -107,27 +114,7 @@ const zonesForFloor = computed(() =>
   floorZones.value.filter((z) => z.floorId === selectedFloorId.value)
 );
 
-/**
- * Basic GraphQL fetch helper. If you already have a central GraphQL
- * client (e.g., via Apollo or a custom wrapper), replace this with that.
- */
-async function fetchGraphQL<T>(
-  query: string,
-  variables?: Record<string, unknown>
-): Promise<T> {
-  const res = await fetch("/graphql", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables }),
-  });
 
-  const json = await res.json();
-  if (json.errors?.length) {
-    const first = json.errors[0];
-    throw new Error(first.message || "GraphQL error");
-  }
-  return json.data as T;
-}
 
 async function loadFloorsAndZones() {
   loading.value = true;
@@ -204,11 +191,11 @@ function zoneLabelPosition(zone: FloorZone): { x: number; y: number } {
   return { x: sumX / count, y: sumY / count };
 }
 
-/**
- * CSS class per zone type for coloring.
- */
 function zoneCssClass(zone: FloorZone): string {
   const t = zone.zoneType || "";
+  if (highlightedWorkCenterId.value && zone.workCenterId === highlightedWorkCenterId.value) {
+    return "zone-highlight";
+  }
   if (t === "work_center") return "zone-work-center";
   if (t === "department") return "zone-department";
   return "zone-other";
@@ -225,7 +212,7 @@ function handleZoneClick(zone: FloorZone) {
   }
 
   if (zone.zoneType === "department" && zone.departmentId) {
-    router.push({ name: "department-detail", params: { id: zone.departmentId } });
+    console.info("Clicked department zone", zone.departmentId);
     return;
   }
 
@@ -234,6 +221,13 @@ function handleZoneClick(zone: FloorZone) {
 }
 
 onMounted(() => {
+  const q = route.query.workCenterId;
+  if (typeof q === "string") {
+    const parsed = Number(q);
+    if (!Number.isNaN(parsed)) {
+      highlightedWorkCenterId.value = parsed;
+    }
+  }
   loadFloorsAndZones();
 });
 </script>
@@ -270,6 +264,10 @@ onMounted(() => {
 }
 
 .control label {
+  font-size: 0.9rem;
+}
+
+.control {
   font-size: 0.9rem;
 }
 
@@ -381,5 +379,19 @@ onMounted(() => {
   justify-content: center;
   flex: 1;
   color: #777;
+}
+
+.status {
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+
+.status-error {
+  color: #b00020;
+}
+
+.zone-highlight {
+  stroke-width: 3;
+  fill-opacity: 0.75;
 }
 </style>

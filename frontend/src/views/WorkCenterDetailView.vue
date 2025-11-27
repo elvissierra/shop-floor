@@ -1,17 +1,36 @@
 <template>
   <div class="page">
     <header class="page-header">
-      <button class="btn-link" @click="goBack">← Back</button>
-
-      <div v-if="workCenter">
-        <h1>{{ workCenter.name }}</h1>
-        <p class="subtitle">
-          Code: <strong>{{ workCenter.code || "—" }}</strong>
-          <span class="divider">•</span>
-          Department ID: <strong>{{ workCenter.departmentId ?? "—" }}</strong>
-        </p>
+      <div class="header-left">
+        <button class="btn-link" @click="goBack">← Back</button>
+      
+        <div v-if="workCenter">
+          <h1>{{ workCenter.name }}</h1>
+          <p class="subtitle">
+            Code: <strong>{{ workCenter.code || "—" }}</strong>
+            <span class="divider">•</span>
+            <template v-if="departmentName">
+              Department: <strong>{{ departmentName }}</strong>
+            </template>
+            <template v-else>
+              Department ID: <strong>{{ workCenter.departmentId ?? "—" }}</strong>
+            </template>
+          </p>
+        </div>
       </div>
+    
+      <button
+        v-if="workCenter"
+        class="btn-primary"
+        @click="goToFloorMap"
+      >
+        View on Floor Map
+      </button>
     </header>
+
+    <div v-if="errorMessage" class="status status-error">
+      {{ errorMessage }}
+    </div>
 
     <section class="grid">
       <div class="card">
@@ -116,6 +135,13 @@ type FloorZone = {
   polygon: string;
 };
 
+
+type Department = {
+  id: number;
+  title: string;
+  description: string;
+};
+
 const route = useRoute();
 const router = useRouter();
 const idParam = route.params.id;
@@ -128,10 +154,18 @@ const workCenters = ref<WorkCenter[]>([]);
 const workOrders = ref<WorkOrder[]>([]);
 const routingSteps = ref<RoutingStep[]>([]);
 const floorZones = ref<FloorZone[]>([]);
+const departments = ref<Department[]>([]);
 
 const workCenter = computed(() =>
   workCenters.value.find((wc) => wc.id === workCenterId) || null
 );
+
+const departmentName = computed(() => {
+  const wc = workCenter.value;
+  if (!wc || wc.departmentId == null) return null;
+  const dept = departments.value.find((d) => d.id === wc.departmentId);
+  return dept ? dept.title : null;
+});
 
 const workOrdersForCenter = computed(() =>
   workOrders.value.filter((wo) => wo.workCenterId === workCenterId)
@@ -149,12 +183,22 @@ function goBack() {
   router.push({ name: "work-centers" });
 }
 
+function goToFloorMap() {
+  if (!workCenterId) return;
+  router.push({ name: "floor-map", query: { workCenterId } });
+}
+
 async function loadData() {
   loading.value = true;
   errorMessage.value = null;
 
   const query = `
     query WorkCenterDetail {
+      departments {
+        id
+        title
+        description
+      }
       workCenters {
         id
         name
@@ -191,12 +235,14 @@ async function loadData() {
 
   try {
     type Response = {
+      departments: Department[];
       workCenters: WorkCenter[];
       workOrders: WorkOrder[];
       routingSteps: RoutingStep[];
       floorZones: FloorZone[];
     };
     const data = await fetchGraphQL<Response>(query);
+    departments.value = data.departments ?? [];
     workCenters.value = data.workCenters ?? [];
     workOrders.value = data.workOrders ?? [];
     routingSteps.value = data.routingSteps ?? [];
@@ -230,6 +276,12 @@ onMounted(loadData);
   justify-content: space-between;
 }
 
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .btn-link {
   border: none;
   background: none;
@@ -240,6 +292,21 @@ onMounted(loadData);
 
 .btn-link:hover {
   text-decoration: underline;
+}
+
+.btn-primary {
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  border: none;
+  background-color: #1976d2;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background-color: #115293;
 }
 
 .subtitle {
@@ -306,5 +373,14 @@ onMounted(loadData);
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
   border: 1px solid #ccc;
+}
+
+.status {
+  margin-top: 0.5rem;
+  color: #555;
+}
+
+.status-error {
+  color: #b00020;
 }
 </style>
