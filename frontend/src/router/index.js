@@ -50,14 +50,22 @@ const routes = [
     name: 'work-center-detail',
     component: WorkCenterDetailView,
     props: true,
-    meta: { title: 'Work Center', breadcrumb: [{ label: 'Work Centers' }, { label: 'Detail' }] }
+    meta: {
+      title: 'Work Center',
+      breadcrumb: [
+        { label: 'Work Centers', to: { name: 'work-centers' } },
+        { label: 'Detail' },
+      ],
+    },
   },
-  { path: '/shopfloor', name: 'shopfloor', component: () => import('../views/ShopFloorView.vue'), meta: { title: 'Shop Floor', breadcrumb: [{ label: 'Shop Floor' }] } },
   {
     path: '/floor-map',
     name: 'floor-map',
     component: FloorMapView,
-    meta: { title: 'Shop Floor Layout', breadcrumb: [{ label: 'Shop Floor Layout' }] }
+    meta: {
+      title: 'Shop Floor Map',
+      breadcrumb: [{ label: 'Shop Floor Map' }],
+    },
   },
 ];
 

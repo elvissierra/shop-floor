@@ -3,7 +3,7 @@
     <div class="hero" role="banner" aria-label="Shop Floor hero">
       <h1 class="hero-title">Dashboard</h1>
       <p class="hero-sub">
-        Insights leading dashboard.
+        High-level view of your departments, work centers, and parts.
       </p>
       <div class="hero-actions">
         <router-link to="/departments" class="btn btn-primary">View Departments</router-link>
@@ -15,6 +15,10 @@
       <div class="kpi card">
         <div class="kpi-num">{{ deptCount }}</div>
         <div class="kpi-label">Departments</div>
+      </div>
+      <div class="kpi card">
+        <div class="kpi-num">{{ workCenterCount }}</div>
+        <div class="kpi-label">Work Centers</div>
       </div>
       <div class="kpi card">
         <div class="kpi-num">{{ partCount }}</div>
@@ -33,7 +37,12 @@
           <div v-for="p in latestParts" :key="p.id" class="row card">
             <div class="row-main">
               <div class="row-title">{{ p.name }}</div>
-              <div class="row-sub">Dept: <span class="badge">{{ p.departmentId ?? '—' }}</span></div>
+              <div class="row-sub">
+                Dept:
+                <span class="badge">
+                  {{ departmentLabelForPart(p) }}
+                </span>
+              </div>
             </div>
             <router-link class="row-cta" to="/parts">Open</router-link>
           </div>
@@ -43,16 +52,18 @@
 
     <div class="feature-grid">
       <div class="card feature">
-        <h3 class="feature-title">Fast CRUD</h3>
-        <p class="feature-text">Create, update, and search Departments and Parts with an optimistic UI and toasts.</p>
+        <h3 class="feature-title">Quick Updates</h3>
+        <p class="feature-text">Add, edit, and find departments and parts in a few clicks with instant feedback.</p>
       </div>
       <div class="card feature">
-        <h3 class="feature-title">GraphQL Driven</h3>
-        <p class="feature-text">Typed queries with camelCase fields, pagination, and clear errors for easy debugging.</p>
+        <h3 class="feature-title">Accurate Shop Data</h3>
+        <p class="feature-text">Keep your departments, work centers, and parts in sync so everyone is working from the same source of truth.</p>
       </div>
       <div class="card feature">
-        <h3 class="feature-title">Desktop-First UX</h3>
-        <p class="feature-text">Full-width layout, clean spacing, and accessible controls tuned for large screens.</p>
+        <h3 class="feature-title">Floor Overview</h3>
+        <p class="feature-text">
+          Use the shop floor map to see where departments and work centers live in the plant and jump into their details.
+        </p>
       </div>
     </div>
   </section>
@@ -68,7 +79,24 @@ import { shopFloorService } from '../services/api'
 const store = useShopFloorStore()
 onMounted(() => { if (!store.shopFloorData) store.fetchShopFloorData() })
 const deptCount = computed(() => store.shopFloorData?.departments?.length ?? 0)
+const workCenterCount = computed(() => store.shopFloorData?.workCenters?.length ?? 0)
 const partCount = computed(() => store.shopFloorData?.parts?.length ?? 0)
+
+const departmentLookup = computed(() => {
+  const map = new Map()
+  const departments = store.shopFloorData?.departments ?? []
+  for (const d of departments) {
+    if (d && typeof d.id !== 'undefined') {
+      map.set(d.id, d.title ?? d.name ?? String(d.id))
+    }
+  }
+  return map
+})
+
+function departmentLabelForPart(p) {
+  if (!p || p.departmentId == null) return '—'
+  return departmentLookup.value.get(p.departmentId) ?? `#${p.departmentId}`
+}
 const latestParts = ref([])
 const loadingLatest = ref(false)
 
@@ -95,7 +123,7 @@ onMounted(async () => {
 .hero-sub{font-size:1.05rem;opacity:.95;margin:0 0 1rem 0;max-width:68ch;}
 .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;}
 
-.kpis{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:.9rem;margin:1rem 0 1.25rem 0;}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:.9rem;margin:1rem 0 1.25rem 0;}
 .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;}
 .kpi-num{font-size:2rem;font-weight:900;color:var(--c-text);line-height:1.1;}
 .kpi-label{margin-top:.25rem;color:var(--c-muted);}

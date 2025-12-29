@@ -46,13 +46,20 @@
     </div>
     <div v-if="!loading && !error && departments.length === 0" class="empty">
       <h3>No departments yet</h3>
-      <p>Create your first department from the backend or via GraphQL.</p>
+      <p>Use “+ Add Department” to create your first department.</p>
       <button class="btn-more" @click="loadBatch(true)">Refresh</button>
     </div>
     <div v-if="!loading" class="pager">
       <button v-if="moreAvailable" @click="loadBatch()" class="btn-more">Load more</button>
       <div v-else class="end">No more departments</div>
     </div>
+    <section class="map-cta" aria-label="Shop floor overview">
+      <h2 class="map-cta-title">Shop floor overview</h2>
+      <p class="map-cta-text">
+        Open the shop floor map to see where your departments live in the plant and jump into their details.
+      </p>
+      <router-link class="btn-map" to="/floor-map">Open floor map</router-link>
+    </section>
     <Modal v-if="showModal" @cancel="closeModal">
       <template #title>{{ editing ? 'Edit Department' : 'New Department' }}</template>
       <DepartmentForm v-model="form" :submitting="submitting" @cancel="closeModal" @submit="saveDepartment" />
@@ -272,4 +279,50 @@ const deleteDepartment = async (id) => {
 .department-card { transition: box-shadow .15s ease, transform .15s ease; }
 .department-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
 .department-card:focus { outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.35); }
+
+.map-cta {
+  margin-top: 2rem;
+  padding: 1.25rem 1rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  justify-content: space-between;
+}
+.map-cta-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+.map-cta-text {
+  margin: 0;
+  flex: 1 1 260px;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+.btn-map {
+  text-decoration: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--c-primary);
+  color: #fff;
+  white-space: nowrap;
+}
+.btn-map:hover {
+  opacity: 0.95;
+}
+@media (max-width: 640px) {
+  .map-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 </style>

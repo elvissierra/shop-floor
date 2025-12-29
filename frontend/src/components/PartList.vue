@@ -36,7 +36,13 @@
         :aria-label="`Edit part ${part.name}`"
       >
         <h3>{{ part.name }}</h3>
-        <p>Department ID: {{ part.departmentId }}</p>
+        <p>
+          Department:
+          <span v-if="part.departmentId">
+            {{ getDepartmentName(part.departmentId) || `#${part.departmentId}` }}
+          </span>
+          <span v-else>None</span>
+        </p>
         <div class="part-actions">
           <button @click="viewQuality(part)" class="btn-view">View Quality</button>
           <button @click="addDefect(part)" class="btn-add">Add Defect</button>
@@ -46,7 +52,7 @@
 
     <div v-if="!loading && !error && parts.length === 0" class="empty">
       <h3>No parts yet</h3>
-      <p>Add parts via the GraphQL mutation and they will appear here.</p>
+      <p>Use “+ Add Part” to create your first part.</p>
       <button class="btn-more" @click="loadBatch(true)">Refresh</button>
     </div>
 
@@ -111,6 +117,12 @@ const editing = ref(false)
 const submitting = ref(false)
 const form = ref({ name: '', departmentId: null })
 const departmentOptions = ref([])
+
+const getDepartmentName = (id) => {
+  if (id == null) return null
+  const dept = departmentOptions.value.find((d) => d.id === id)
+  return dept ? dept.title : null
+}
 const selectedId = ref(null)
 
 function openCreate() {

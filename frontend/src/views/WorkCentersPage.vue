@@ -34,10 +34,22 @@
             <td>{{ wc.id }}</td>
             <td>{{ wc.name }}</td>
             <td>{{ wc.code || "—" }}</td>
-            <td>{{ wc.departmentId ?? "—" }}</td>
+            <td>
+              <span v-if="wc.departmentId">
+                {{ departmentName(wc.departmentId) || `#${wc.departmentId}` }}
+              </span>
+              <span v-else>—</span>
+            </td>
           </tr>
         </tbody>
       </table>
+    </section>
+    <section class="map-cta" aria-label="Shop floor overview">
+      <h2 class="map-cta-title">Shop floor overview</h2>
+      <p class="map-cta-text">
+        Open the shop floor map to see where work centers live in the plant and jump into their details.
+      </p>
+      <router-link class="btn-map" to="/floor-map">Open floor map</router-link>
     </section>
     <Modal v-if="showModal" @cancel="closeModal">
       <template #title>New Work Center</template>
@@ -141,6 +153,12 @@ const form = ref<WorkCenterForm>({
 });
 
 const departmentOptions = ref<Department[]>([]);
+
+const departmentName = (id: number | null): string | null => {
+  if (id == null) return null;
+  const dept = departmentOptions.value.find((d) => d.id === id);
+  return dept ? dept.title : null;
+};
 
 async function loadWorkCenters() {
   loading.value = true;
@@ -373,5 +391,58 @@ onMounted(async () => {
 .btn.primary {
   background: var(--c-primary);
   color: #fff;
+}
+</style>
+
+<style scoped>
+.map-cta {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  justify-content: space-between;
+}
+
+.map-cta-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.map-cta-text {
+  margin: 0;
+  flex: 1 1 260px;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.btn-map {
+  text-decoration: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--c-primary);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.btn-map:hover {
+  opacity: 0.95;
+}
+
+@media (max-width: 640px) {
+  .map-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

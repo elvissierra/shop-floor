@@ -95,16 +95,15 @@
         <h2>Floor Zones for this Center</h2>
         <div v-if="loading" class="status">Loading…</div>
         <div v-else-if="!floorZonesForCenter.length">
-          <p class="muted">This work center is not referenced by any floor zones.</p>
+          <p class="muted">This work center is not mapped to any floor zones yet.</p>
         </div>
         <ul v-else class="list">
           <li v-for="zone in floorZonesForCenter" :key="zone.id">
             <div class="row-main">
-              {{ zone.name }} (Floor {{ zone.floorId }})
+              {{ zone.name }}
             </div>
             <div class="row-sub">
-              Type: {{ zone.zoneType || "—" }}
-              • Polygon: {{ zone.polygon }}
+              Floor {{ zone.floorId }} • Type: {{ zone.zoneType || "—" }}
             </div>
           </li>
         </ul>

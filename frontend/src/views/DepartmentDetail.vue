@@ -86,11 +86,16 @@
       </div>
 
       <div class="card card-wide">
-        <h2>Floor Zones for this Department</h2>
+        <div class="card-header-row">
+          <h2>Floor Zones for this Department</h2>
+          <button class="btn-secondary" type="button" @click="goToFloorMap">
+            View on Floor Map
+          </button>
+        </div>
         <div v-if="loading" class="status">Loading…</div>
         <div v-else-if="!floorZonesForDepartment.length">
           <p class="muted">
-            This department is not referenced by any floor zones.
+            This department is not mapped to any floor zones yet.
           </p>
         </div>
         <ul v-else class="list">
@@ -181,6 +186,11 @@ function goToWorkCenter(id: number) {
 
 function goToPart(id: number) {
   router.push({ name: "part-detail", params: { id } });
+}
+
+function goToFloorMap() {
+  if (!departmentId) return;
+  router.push({ name: "floor-map", query: { departmentId } });
 }
 
 async function loadData() {
@@ -379,5 +389,25 @@ onMounted(loadData);
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
   border: 1px solid #ccc;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary {
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  background: #e5e7eb;
+  font-size: 0.85rem;
+}
+
+.btn-secondary:hover {
+  background: #d4d4d8;
 }
 </style>

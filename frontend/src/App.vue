@@ -2,13 +2,13 @@
   <div class="app">
     <nav class="navbar" role="navigation" aria-label="Main">
       <div class="nav-inner container">
-        <router-link to="/shopfloor" class="brand">Shop Floor</router-link>
+        <router-link to="/" class="brand">Shop Floor</router-link>
         <div class="nav-links">
           <router-link to="/" class="nav-link">Dashboard</router-link>
-          <router-link to="/shopfloor" class="nav-link">Shop Floor</router-link>
           <router-link to="/departments" class="nav-link">Departments</router-link>
           <router-link to="/work-centers" class="nav-link">Work Centers</router-link>
           <router-link to="/parts" class="nav-link">Parts</router-link>
+          <router-link to="/floor-map" class="nav-link">Floor Map</router-link>
         </div>
       </div>
     </nav>
