@@ -171,20 +171,19 @@ export const shopFloorService = {
   },
 
 
-  // --- Manufacturing methods removed (not backed by schema) ---
-
-
-  // --- Dashboard rollup (used by ShopFloorView) ---
   async getShopFloorData() {
     const data = await gql(/* GraphQL */ `
       query DashboardData {
         departments { id title description }
+        workCenters { id name code departmentId}
         parts { id name departmentId }
+
       }
     `);
     return {
-      departments: data.departments,
-      parts: data.parts.map(mapPart),
+      departments: data.departments ?? [],
+      workCenters: (data.workCenters || []).map(mapWorkCenter),
+      parts: (data.parts || []).map(mapPart),
     };
   },
 
