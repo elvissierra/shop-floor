@@ -40,7 +40,6 @@ from app.api.services import MutationService, QueryService
 
 @strawberry.type
 class Mutation:
-
     # ---- Floors (shop-floor layouts) ----
     @strawberry.mutation
     def add_floor(self, data: FloorInput, info) -> FloorType:
@@ -100,6 +99,7 @@ class Mutation:
     def delete_floor_zone(self, id: int, info) -> bool:
         db: Session = info.context["db"]
         return MutationService(db).delete_floor_zone(id)
+
     @strawberry.mutation
     def add_user(self, user_data: UserInput, info) -> UserType:
         db = info.context.get("db")
@@ -266,7 +266,6 @@ class Mutation:
         db: Session = info.context["db"]
         return MutationService(db).delete_quality(id)
 
-
     @strawberry.mutation
     def add_work_center(self, data: WorkCenterInput, info) -> WorkCenterType:
         db: Session = info.context["db"]
@@ -367,7 +366,6 @@ class Mutation:
 
 @strawberry.type
 class Query:
-
     @strawberry.field
     def users(
         self, info, limit: int | None = None, offset: int | None = None
@@ -537,7 +535,6 @@ class Query:
             part_id=quality.part_id,
         )
 
-
     @strawberry.field
     def work_centers(
         self, info, limit: int | None = None, offset: int | None = None
@@ -682,6 +679,7 @@ class Query:
             )
             for log in logs
         ]
+
     @strawberry.field
     def floors(
         self, info, limit: int | None = None, offset: int | None = None

@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 import strawberry
 from strawberry.schema.config import StrawberryConfig
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -13,16 +13,17 @@ from sqlalchemy import text
 from app.core.database import SessionLocal, engine
 
 
-
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
 )
 log = logging.getLogger("shop-floor")
 
+
 def _as_list(v):
     if isinstance(v, str):
         return [s.strip() for s in v.split(",") if s.strip()]
     return v
+
 
 schema = strawberry.Schema(
     query=Query,
@@ -79,7 +80,11 @@ def graphql_error_formatter(error):
     message = str(original) if original else str(error)
 
     # Prefer an explicit extensions.code if provided on the original error
-    ext = getattr(original, "extensions", None) or getattr(error, "extensions", None) or {}
+    ext = (
+        getattr(original, "extensions", None)
+        or getattr(error, "extensions", None)
+        or {}
+    )
     code = ext.get("code")
 
     # If no explicit code, fall back to the prefix convention
@@ -129,13 +134,17 @@ def healthz():
 @app.get("/readyz")
 def readyz():
     if not settings.DATABASE_URL:
-        return JSONResponse(status_code=500, content={"status": "error", "reason": "no DATABASE_URL"})
+        return JSONResponse(
+            status_code=500, content={"status": "error", "reason": "no DATABASE_URL"}
+        )
     try:
         with engine.connect() as conn:
             conn.execute(text("select 1"))
         return {"status": "ready"}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"status": "error", "reason": str(e)})
+        return JSONResponse(
+            status_code=500, content={"status": "error", "reason": str(e)}
+        )
 
 
 # Error normalization

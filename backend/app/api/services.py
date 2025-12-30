@@ -38,13 +38,15 @@ from app.schema import (
     FloorInput,
     FloorZoneInput,
 )
+
+
 class FloorRepo:
     def __init__(self, db: Session):
         self.db = db
 
     def list(self, limit: int | None = None, offset: int | None = None) -> list[Floor]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Floor).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Floor).offset(offset_).limit(limit_).all()
 
     def get(self, floor_id: int) -> Floor | None:
         return self.db.get(Floor, floor_id)
@@ -64,16 +66,14 @@ class FloorZoneRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[FloorZone]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(FloorZone).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[FloorZone]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(FloorZone).offset(offset_).limit(limit_).all()
 
     def list_by_floor(self, floor_id: int) -> list[FloorZone]:
-        return (
-            self.db.query(FloorZone)
-            .filter(FloorZone.floor_id == floor_id)
-            .all()
-        )
+        return self.db.query(FloorZone).filter(FloorZone.floor_id == floor_id).all()
 
     def get(self, zone_id: int) -> FloorZone | None:
         return self.db.get(FloorZone, zone_id)
@@ -88,6 +88,7 @@ class FloorZoneRepo:
         self.db.delete(zone)
         self.db.commit()
 
+
 # --- Pagination helper ---
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -95,9 +96,9 @@ MAX_LIMIT = 200
 
 def _coerce_pagination(limit: int | None, offset: int | None) -> tuple[int, int]:
     """Clamp and sanitize limit/offset."""
-    l = DEFAULT_LIMIT if (limit is None or limit <= 0) else min(limit, MAX_LIMIT)
-    o = 0 if (offset is None or offset < 0) else offset
-    return l, o
+    limit_ = DEFAULT_LIMIT if (limit is None or limit <= 0) else min(limit, MAX_LIMIT)
+    offset_ = 0 if (offset is None or offset < 0) else offset
+    return limit_, offset_
 
 
 # --- Repository layer (low-level DB access; no business logic) ---
@@ -109,8 +110,8 @@ class UserRepo:
         return self.db.query(User).filter(User.username == username).first()
 
     def list(self, limit: int | None = None, offset: int | None = None) -> list[User]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(User).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(User).offset(offset_).limit(limit_).all()
 
     def get(self, user_id: int) -> User | None:
         return self.db.get(User, user_id)
@@ -136,8 +137,8 @@ class DepartmentRepo:
     def list(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[Department]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Department).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Department).offset(offset_).limit(limit_).all()
 
     def get(self, department_id: int) -> Department | None:
         return self.db.get(Department, department_id)
@@ -158,8 +159,8 @@ class PartRepo:
         self.db = db
 
     def list(self, limit: int | None = None, offset: int | None = None) -> list[Part]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Part).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Part).offset(offset_).limit(limit_).all()
 
     def get(self, part_id: int) -> Part | None:
         return self.db.get(Part, part_id)
@@ -178,8 +179,8 @@ class DefectCategoryRepo:
     def list(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[DefectCategory]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(DefectCategory).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(DefectCategory).offset(offset_).limit(limit_).all()
 
     def get(self, defect_category_id: int) -> DefectCategory | None:
         return self.db.get(DefectCategory, defect_category_id)
@@ -196,8 +197,8 @@ class DefectRepo:
         self.db = db
 
     def list(self, limit: int | None = None, offset: int | None = None) -> list[Defect]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Defect).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Defect).offset(offset_).limit(limit_).all()
 
     def get(self, defect_id: int) -> Defect | None:
         return self.db.get(Defect, defect_id)
@@ -224,15 +225,16 @@ class DefectRepo:
             .first()
         )
 
-    def first_by_part_and_department(self, part_id: int, department_id: int) -> Defect | None:
+    def first_by_part_and_department(
+        self, part_id: int, department_id: int
+    ) -> Defect | None:
         return (
             self.db.query(Defect)
             .join(Defect.part)
             .filter(Defect.part_id == part_id, Part.department_id == department_id)
             .first()
         )
-    
-    
+
     def create(self, defect: Defect) -> Defect:
         self.db.add(defect)
         self.db.commit()
@@ -247,8 +249,8 @@ class QualityRepo:
     def list(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[Quality]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Quality).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Quality).offset(offset_).limit(limit_).all()
 
     def get(self, quality_id: int) -> Quality | None:
         return self.db.get(Quality, quality_id)
@@ -267,9 +269,11 @@ class WorkCenterRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkCenter]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(WorkCenter).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkCenter]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(WorkCenter).offset(offset_).limit(limit_).all()
 
     def get(self, work_center_id: int) -> WorkCenter | None:
         return self.db.get(WorkCenter, work_center_id)
@@ -289,9 +293,11 @@ class WorkOrderRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrder]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(WorkOrder).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkOrder]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(WorkOrder).offset(offset_).limit(limit_).all()
 
     def get(self, work_order_id: int) -> WorkOrder | None:
         return self.db.get(WorkOrder, work_order_id)
@@ -311,9 +317,11 @@ class WorkOrderOpRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrderOp]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(WorkOrderOp).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkOrderOp]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(WorkOrderOp).offset(offset_).limit(limit_).all()
 
     def list_by_work_order(self, work_order_id: int) -> list[WorkOrderOp]:
         return (
@@ -334,9 +342,11 @@ class RoutingRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[Routing]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(Routing).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[Routing]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(Routing).offset(offset_).limit(limit_).all()
 
     def get(self, routing_id: int) -> Routing | None:
         return self.db.get(Routing, routing_id)
@@ -352,9 +362,11 @@ class RoutingStepRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[RoutingStep]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(RoutingStep).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[RoutingStep]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(RoutingStep).offset(offset_).limit(limit_).all()
 
     def list_by_routing(self, routing_id: int) -> list[RoutingStep]:
         return (
@@ -376,8 +388,8 @@ class BOMRepo:
         self.db = db
 
     def list(self, limit: int | None = None, offset: int | None = None) -> list[BOM]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(BOM).offset(o).limit(l).all()
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(BOM).offset(offset_).limit(limit_).all()
 
     def get(self, bom_id: int) -> BOM | None:
         return self.db.get(BOM, bom_id)
@@ -393,9 +405,11 @@ class BOMItemRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[BOMItem]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(BOMItem).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[BOMItem]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(BOMItem).offset(offset_).limit(limit_).all()
 
     def list_by_bom(self, bom_id: int) -> list[BOMItem]:
         return self.db.query(BOMItem).filter(BOMItem.bom_id == bom_id).all()
@@ -411,9 +425,11 @@ class ActivityLogRepo:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self, limit: int | None = None, offset: int | None = None) -> list[ActivityLog]:
-        l, o = _coerce_pagination(limit, offset)
-        return self.db.query(ActivityLog).offset(o).limit(l).all()
+    def list(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[ActivityLog]:
+        limit_, offset_ = _coerce_pagination(limit, offset)
+        return self.db.query(ActivityLog).offset(offset_).limit(limit_).all()
 
     def create(self, log: ActivityLog) -> ActivityLog:
         self.db.add(log)
@@ -423,14 +439,9 @@ class ActivityLogRepo:
 
 
 class MutationService:
-
     # ---- Floor: CRUD for shop-floor layouts ----
     def add_floor(self, data: FloorInput) -> Floor:
-        existing = (
-            self.db.query(Floor)
-            .filter(Floor.name == data.name)
-            .first()
-        )
+        existing = self.db.query(Floor).filter(Floor.name == data.name).first()
         if existing:
             raise GraphQLError(
                 "Floor already exists; check name.",
@@ -455,11 +466,7 @@ class MutationService:
             )
 
         if data.name and data.name != floor.name:
-            exists = (
-                self.db.query(Floor)
-                .filter(Floor.name == data.name)
-                .first()
-            )
+            exists = self.db.query(Floor).filter(Floor.name == data.name).first()
             if exists:
                 raise GraphQLError(
                     "Floor already exists; check name.",
@@ -577,6 +584,7 @@ class MutationService:
         self.db.delete(zone)
         self.db.commit()
         return True
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -585,7 +593,9 @@ class MutationService:
             self.db.query(User).filter(User.username == user_data.username).first()
         )
         if existing_user:
-            raise GraphQLError("User already exists; check username.", extensions={"code": "CONFLICT"})
+            raise GraphQLError(
+                "User already exists; check username.", extensions={"code": "CONFLICT"}
+            )
 
         user = User(
             username=user_data.username,
@@ -605,7 +615,10 @@ class MutationService:
             .first()
         )
         if existing_department:
-            raise GraphQLError("Department already exists; check title.", extensions={"code": "CONFLICT"})
+            raise GraphQLError(
+                "Department already exists; check title.",
+                extensions={"code": "CONFLICT"},
+            )
 
         department = Department(
             title=department_data.title,
@@ -621,7 +634,10 @@ class MutationService:
     ) -> Department:
         department = self.db.get(Department, department_id)
         if not department:
-            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Department {department_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         department.title = data.title
         department.description = data.description
         self.db.commit()
@@ -631,7 +647,10 @@ class MutationService:
     def delete_department(self, department_id: int) -> bool:
         department = self.db.get(Department, department_id)
         if not department:
-            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Department {department_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         self.db.delete(department)
         self.db.commit()
         return True
@@ -693,12 +712,17 @@ class MutationService:
     def update_user(self, user_id: int, data: UserInput) -> User:
         user = self.db.get(User, user_id)
         if not user:
-            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"User {user_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         # Optional uniqueness check if username changed
         if data.username and data.username != user.username:
             exists = self.db.query(User).filter(User.username == data.username).first()
             if exists:
-                raise GraphQLError("User already exists; check username.", extensions={"code": "CONFLICT"})
+                raise GraphQLError(
+                    "User already exists; check username.",
+                    extensions={"code": "CONFLICT"},
+                )
             user.username = data.username
         user.department_id = data.department_id
         user.job = data.job
@@ -710,7 +734,9 @@ class MutationService:
     def delete_user(self, user_id: int) -> bool:
         user = self.db.get(User, user_id)
         if not user:
-            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"User {user_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         self.db.delete(user)
         self.db.commit()
         return True
@@ -719,7 +745,9 @@ class MutationService:
     def update_part(self, part_id: int, data: PartInput) -> Part:
         part = self.db.get(Part, part_id)
         if not part:
-            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Part {part_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         part.name = data.name
         part.department_id = data.department_id
         self.db.commit()
@@ -729,7 +757,9 @@ class MutationService:
     def delete_part(self, part_id: int) -> bool:
         part = self.db.get(Part, part_id)
         if not part:
-            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Part {part_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         self.db.delete(part)
         self.db.commit()
         return True
@@ -740,7 +770,10 @@ class MutationService:
     ) -> DefectCategory:
         dc = self.db.get(DefectCategory, defect_category_id)
         if not dc:
-            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect category {defect_category_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         # Optional uniqueness check if title changed
         if data.title and data.title != dc.title:
             exists = (
@@ -749,7 +782,10 @@ class MutationService:
                 .first()
             )
             if exists:
-                raise GraphQLError("Defect category already exists; check title.", extensions={"code": "CONFLICT"})
+                raise GraphQLError(
+                    "Defect category already exists; check title.",
+                    extensions={"code": "CONFLICT"},
+                )
             dc.title = data.title
         dc.department_id = data.department_id
         self.db.commit()
@@ -759,7 +795,10 @@ class MutationService:
     def delete_defect_category(self, defect_category_id: int) -> bool:
         dc = self.db.get(DefectCategory, defect_category_id)
         if not dc:
-            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect category {defect_category_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         self.db.delete(dc)
         self.db.commit()
         return True
@@ -768,7 +807,9 @@ class MutationService:
     def update_defect(self, defect_id: int, data: DefectInput) -> Defect:
         defect = self.db.get(Defect, defect_id)
         if not defect:
-            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         defect.title = data.title
         defect.description = data.description
         defect.part_id = data.part_id
@@ -780,7 +821,9 @@ class MutationService:
     def delete_defect(self, defect_id: int) -> bool:
         defect = self.db.get(Defect, defect_id)
         if not defect:
-            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         self.db.delete(defect)
         self.db.commit()
         return True
@@ -789,7 +832,9 @@ class MutationService:
     def update_quality(self, quality_id: int, data: QualityInput) -> Quality:
         quality = self.db.get(Quality, quality_id)
         if not quality:
-            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         quality.pass_fail = data.pass_fail
         quality.defect_count = data.defect_count
         quality.part_id = data.part_id
@@ -800,18 +845,18 @@ class MutationService:
     def delete_quality(self, quality_id: int) -> bool:
         quality = self.db.get(Quality, quality_id)
         if not quality:
-            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         self.db.delete(quality)
         self.db.commit()
         return True
-    
+
     def add_work_center(self, data: WorkCenterInput) -> WorkCenter:
         # Optional uniqueness check on code to avoid DB integrity errors
         if data.code:
             existing = (
-                self.db.query(WorkCenter)
-                .filter(WorkCenter.code == data.code)
-                .first()
+                self.db.query(WorkCenter).filter(WorkCenter.code == data.code).first()
             )
             if existing:
                 raise GraphQLError(
@@ -842,9 +887,7 @@ class MutationService:
     def add_work_order(self, data: WorkOrderInput) -> WorkOrder:
         # Enforce unique work order number at the service layer
         existing = (
-            self.db.query(WorkOrder)
-            .filter(WorkOrder.number == data.number)
-            .first()
+            self.db.query(WorkOrder).filter(WorkOrder.number == data.number).first()
         )
         if existing:
             raise GraphQLError(
@@ -861,9 +904,7 @@ class MutationService:
 
         # Default department to the part's department if not explicitly provided
         department_id = (
-            data.department_id
-            if data.department_id is not None
-            else part.department_id
+            data.department_id if data.department_id is not None else part.department_id
         )
 
         work_center_id = data.work_center_id
@@ -1020,7 +1061,6 @@ class MutationService:
         return log
 
 
-
 class QueryService:
     def __init__(self, db: Session):
         self.db = db
@@ -1050,7 +1090,9 @@ class QueryService:
     def get_user(self, user_id: int) -> User:
         user = self.users.get(user_id)
         if not user:
-            raise GraphQLError(f"User {user_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"User {user_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return user
 
     # ---- Departments ----
@@ -1062,13 +1104,18 @@ class QueryService:
     def get_department(self, department_id: int) -> Department:
         department = self.departments.get(department_id)
         if not department:
-            raise GraphQLError(f"Department {department_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Department {department_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return department
 
     def get_department_by_title(self, title: str) -> Department:
         department = self.departments.by_title(title)
         if not department:
-            raise GraphQLError(f"Department {title} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Department {title} not found", extensions={"code": "NOT_FOUND"}
+            )
         return department
 
     # ---- Parts ----
@@ -1080,7 +1127,9 @@ class QueryService:
     def get_part(self, part_id: int) -> Part:
         part = self.parts.get(part_id)
         if not part:
-            raise GraphQLError(f"Part {part_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Part {part_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return part
 
     # ---- Defect Categories ----
@@ -1092,7 +1141,10 @@ class QueryService:
     def get_defect_category(self, defect_category_id: int) -> DefectCategory:
         defect_category = self.defect_categories.get(defect_category_id)
         if not defect_category:
-            raise GraphQLError(f"Defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect category {defect_category_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return defect_category
 
     # ---- Defects ----
@@ -1104,19 +1156,26 @@ class QueryService:
     def get_defect(self, defect_id: int) -> Defect:
         defect = self.defects.get(defect_id)
         if not defect:
-            raise GraphQLError(f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect {defect_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return defect
 
     def get_defect_by_part_id(self, part_id: int) -> Defect:
         defect = self.defects.first_by_part(part_id)
         if not defect:
-            raise GraphQLError(f"Defect for part {part_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect for part {part_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return defect
 
     def get_defect_by_defect_category_id(self, defect_category_id: int) -> Defect:
         defect = self.defects.first_by_defect_category(defect_category_id)
         if not defect:
-            raise GraphQLError(f"Defect for defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect for defect category {defect_category_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return defect
 
     def get_defect_by_part_id_and_defect_category_id(
@@ -1126,7 +1185,10 @@ class QueryService:
             part_id, defect_category_id
         )
         if not defect:
-            raise GraphQLError(f"Defect for part {part_id} and defect category {defect_category_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect for part {part_id} and defect category {defect_category_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return defect
 
     def get_defect_by_part_id_and_department_id(
@@ -1134,7 +1196,10 @@ class QueryService:
     ) -> Defect:
         defect = self.defects.first_by_part_and_department(part_id, department_id)
         if not defect:
-            raise GraphQLError(f"Defect for part {part_id} and department {department_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Defect for part {part_id} and department {department_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return defect
 
     # ---- Qualities ----
@@ -1146,83 +1211,113 @@ class QueryService:
     def get_quality(self, quality_id: int) -> Quality:
         quality = self.qualities.get(quality_id)
         if not quality:
-            raise GraphQLError(f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Quality {quality_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return quality
 
     def get_quality_by_part_id(self, part_id: int) -> Quality:
         quality = self.qualities.first_by_part(part_id)
         if not quality:
-            raise GraphQLError(f"Quality for part {part_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Quality for part {part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return quality
 
         # ---- Work Centers ----
-    def get_all_work_centers(self, limit: int | None = None, offset: int | None = None) -> list[WorkCenter]:
+
+    def get_all_work_centers(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkCenter]:
         return self.work_centers.list(limit=limit, offset=offset)
 
     def get_work_center(self, work_center_id: int) -> WorkCenter:
         wc = self.work_centers.get(work_center_id)
         if not wc:
-            raise GraphQLError(f"Work center {work_center_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Work center {work_center_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return wc
 
     # ---- Work Orders ----
-    def get_all_work_orders(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrder]:
+    def get_all_work_orders(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkOrder]:
         return self.work_orders.list(limit=limit, offset=offset)
 
     def get_work_order(self, work_order_id: int) -> WorkOrder:
         wo = self.work_orders.get(work_order_id)
         if not wo:
-            raise GraphQLError(f"Work order {work_order_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Work order {work_order_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
         return wo
 
     # ---- Work Order Ops ----
-    def get_all_work_order_ops(self, limit: int | None = None, offset: int | None = None) -> list[WorkOrderOp]:
+    def get_all_work_order_ops(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[WorkOrderOp]:
         return self.work_order_ops.list(limit=limit, offset=offset)
 
     def get_work_order_ops_by_work_order(self, work_order_id: int) -> list[WorkOrderOp]:
         return self.work_order_ops.list_by_work_order(work_order_id)
 
     # ---- Routings ----
-    def get_all_routings(self, limit: int | None = None, offset: int | None = None) -> list[Routing]:
+    def get_all_routings(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[Routing]:
         return self.routings.list(limit=limit, offset=offset)
 
     def get_routing(self, routing_id: int) -> Routing:
         r = self.routings.get(routing_id)
         if not r:
-            raise GraphQLError(f"Routing {routing_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"Routing {routing_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return r
 
     # ---- Routing Steps ----
-    def get_all_routing_steps(self, limit: int | None = None, offset: int | None = None) -> list[RoutingStep]:
+    def get_all_routing_steps(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[RoutingStep]:
         return self.routing_steps.list(limit=limit, offset=offset)
 
     def get_routing_steps_by_routing(self, routing_id: int) -> list[RoutingStep]:
         return self.routing_steps.list_by_routing(routing_id)
 
     # ---- BOMs ----
-    def get_all_boms(self, limit: int | None = None, offset: int | None = None) -> list[BOM]:
+    def get_all_boms(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[BOM]:
         return self.boms.list(limit=limit, offset=offset)
 
     def get_bom(self, bom_id: int) -> BOM:
         b = self.boms.get(bom_id)
         if not b:
-            raise GraphQLError(f"BOM {bom_id} not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError(
+                f"BOM {bom_id} not found", extensions={"code": "NOT_FOUND"}
+            )
         return b
 
     # ---- BOM Items ----
-    def get_all_bom_items(self, limit: int | None = None, offset: int | None = None) -> list[BOMItem]:
+    def get_all_bom_items(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[BOMItem]:
         return self.bom_items.list(limit=limit, offset=offset)
 
     def get_bom_items_by_bom(self, bom_id: int) -> list[BOMItem]:
         return self.bom_items.list_by_bom(bom_id)
 
     # ---- Activity Logs ----
-    def get_all_activity_logs(self, limit: int | None = None, offset: int | None = None) -> list[ActivityLog]:
-        return self.activity_logs.list(limit=limit, offset=offset)
-    
-    def get_activity_logs_for_work_order(
-        self, work_order_id: int
+    def get_all_activity_logs(
+        self, limit: int | None = None, offset: int | None = None
     ) -> list[ActivityLog]:
+        return self.activity_logs.list(limit=limit, offset=offset)
+
+    def get_activity_logs_for_work_order(self, work_order_id: int) -> list[ActivityLog]:
         logs = self.activity_logs.list(limit=None, offset=None)
         return [log for log in logs if log.work_order_id == work_order_id]
 

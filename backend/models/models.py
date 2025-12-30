@@ -79,6 +79,7 @@ class Quality(Base):
 
     part = relationship("Part", back_populates="quality_records")
 
+
 class WorkCenter(Base):
     __tablename__ = "work_centers"
 
@@ -186,7 +187,9 @@ class ActivityLog(Base):
     work_order_id = Column(Integer, ForeignKey("work_orders.id"), nullable=True)
     event_type = Column(String(50), nullable=False)
     message = Column(String(255))
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
     user = relationship("User")
     part = relationship("Part", back_populates="activity_logs")
@@ -202,7 +205,9 @@ class Floor(Base):
     name = Column(String(100), nullable=False)
     description = Column(String(255))
 
-    zones = relationship("FloorZone", back_populates="floor", cascade="all, delete-orphan")
+    zones = relationship(
+        "FloorZone", back_populates="floor", cascade="all, delete-orphan"
+    )
 
 
 class FloorZone(Base):
