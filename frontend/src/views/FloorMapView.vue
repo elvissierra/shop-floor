@@ -39,152 +39,168 @@
       <div v-else-if="errorMessage" class="status status-error">
         {{ errorMessage }}
       </div>
-      <div class="floor-map-legend">
-        <h2>Legend</h2>
-        <ul>
-          <li><span class="legend-swatch legend-work-center"></span> Work Center</li>
-          <li><span class="legend-swatch legend-department"></span> Department</li>
-          <li><span class="legend-swatch legend-other"></span> Other</li>
-        </ul>
+      <div
+        v-else-if="selectedFloor"
+        class="floor-summary"
+      >
+        <p class="floor-summary-text">
+          {{ zoneStatsForFloor.total }} zone<span v-if="zoneStatsForFloor.total !== 1">s</span>
+          on {{ selectedFloor.name }}
+          <span v-if="zoneStatsForFloor.wc || zoneStatsForFloor.dept">
+            • {{ zoneStatsForFloor.wc }} linked to work centers
+            • {{ zoneStatsForFloor.dept }} linked to departments
+          </span>
+        </p>
+      </div>
+      <div class="floor-map-layout">
+        <div class="floor-map-legend">
+          <h2>Legend</h2>
+          <ul>
+            <li><span class="legend-swatch legend-work-center"></span> Work Center</li>
+            <li><span class="legend-swatch legend-department"></span> Department</li>
+            <li><span class="legend-swatch legend-other"></span> Other</li>
+          </ul>
+        </div>
 
-        <div v-if="selectedZone" class="zone-inspector">
-          <h3>Selected zone</h3>
-          <p class="zone-name">{{ selectedZone.name }}</p>
-          <p>
-            Floor {{ selectedZone.floorId }}
-            <span v-if="selectedZone.zoneType">
-              •
-              {{
-                selectedZone.zoneType === 'work_center'
-                  ? 'Work Center'
-                  : selectedZone.zoneType === 'department'
-                  ? 'Department'
-                  : selectedZone.zoneType
-              }}
-            </span>
-          </p>
-          <p v-if="selectedZone.workCenterId">
-            Work Center:
-            <button type="button" @click="openWorkCenter(selectedZone.workCenterId!)">
-              Open work center
-            </button>
-          </p>
-          <p v-if="selectedZone.departmentId">
-            Department:
-            <button type="button" @click="openDepartment(selectedZone.departmentId!)">
-              Open department
-            </button>
-          </p>
-          <p
-            v-if="!selectedZone.workCenterId && !selectedZone.departmentId"
-            class="zone-inspector-muted"
+        <div class="floor-map-canvas-wrapper">
+          <svg
+            class="floor-map-svg"
+            viewBox="0 0 1000 600"
+            preserveAspectRatio="xMidYMid meet"
+            @click="handleCanvasClick"
           >
-            This zone is not linked to a department or work center yet.
-          </p>
-        </div>
+            <g
+              v-for="zone in sortedZonesForFloor"
+              :key="zone.id"
+              class="floor-zone-group"
+              @click="handleZoneClick(zone)"
+            >
+              <polygon
+                class="floor-zone"
+                :class="zoneCssClass(zone)"
+                :points="zonePolygonPoints(zone)"
+              />
+              <text
+                class="floor-zone-label"
+                :x="zoneLabelPosition(zone).x"
+                :y="zoneLabelPosition(zone).y"
+              >
+                {{ zone.name }}
+              </text>
+            </g>
 
-        <div class="zone-list-header">
-          <h3>Zones on this floor</h3>
-          <button type="button" class="btn-secondary" @click="openAddZone">
-            + Add zone
-          </button>
-        </div>
-                <div v-if="drawingMode" class="drawing-hint">
-          <p>
-            Click on the map to add corners for the new zone.
-          </p>
-          <div class="drawing-actions">
-            <button type="button" class="btn-secondary" @click="finishDrawing">
-              Finish polygon
-            </button>
-            <button type="button" class="btn-secondary" @click="cancelDrawing">
-              Cancel
-            </button>
+            <!-- Draft polygon preview while drawing a new zone -->
+            <polyline
+              v-if="drawingMode && draftPoints.length"
+              class="floor-zone draft-zone"
+              :points="draftPolygonPoints"
+            />
+            <g v-if="drawingMode">
+              <circle
+                v-for="(pt, idx) in draftPoints"
+                :key="idx"
+                class="draft-point"
+                :cx="pt.x"
+                :cy="pt.y"
+                r="6"
+              />
+            </g>
+          </svg>
+
+          <div
+            v-if="!zonesForFloor.length && !draftPoints.length"
+            class="no-zones"
+          >
+            <p>No zones defined for this floor yet.</p>
           </div>
         </div>
-        <ul v-if="zonesForFloor.length" class="zone-list">
-          <li
-            v-for="zone in zonesForFloor"
-            :key="zone.id"
-            :class="[
-              'zone-list-item',
-              { active: selectedZone && selectedZone.id === zone.id }
-            ]"
-            @click="handleZoneClick(zone)"
-          >
-            <div class="zone-list-name">{{ zone.name }}</div>
-            <div class="zone-list-meta">
-              Floor {{ zone.floorId }}
-              <span v-if="zone.zoneType">
-                •
-                {{
-                  zone.zoneType === 'work_center'
-                    ? 'Work Center'
-                    : zone.zoneType === 'department'
-                    ? 'Department'
-                    : zone.zoneType
-                }}
-              </span>
-            </div>
-          </li>
-        </ul>
-        <p v-else class="zone-list-empty">
-          No zones defined for this floor yet.
+      </div>
+    </section>
+    <section class="floor-map-zones">
+      <div v-if="selectedZone" class="zone-inspector">
+        <h3>Selected zone</h3>
+        <p class="zone-name">{{ selectedZone.name }}</p>
+        <p>
+          Floor: {{ floorLabel(selectedZone.floorId) }}
+          <span v-if="selectedZone.zoneType">
+            •
+            {{
+              selectedZone.zoneType === 'work_center'
+                ? 'Work Center'
+                : selectedZone.zoneType === 'department'
+                ? 'Department'
+                : selectedZone.zoneType
+            }}
+          </span>
+        </p>
+        <p v-if="selectedZone.workCenterId">
+          Work Center:
+          <button type="button" @click="openWorkCenter(selectedZone.workCenterId!)">
+            Open work center
+          </button>
+        </p>
+        <p v-if="selectedZone.departmentId">
+          Department:
+          <button type="button" @click="openDepartment(selectedZone.departmentId!)">
+            Open department
+          </button>
+        </p>
+        <p
+          v-if="!selectedZone.workCenterId && !selectedZone.departmentId"
+          class="zone-inspector-muted"
+        >
+          This zone is not linked to a department or work center yet.
         </p>
       </div>
 
-      <div class="floor-map-canvas-wrapper">
-                <svg
-          class="floor-map-svg"
-          viewBox="0 0 1000 600"
-          preserveAspectRatio="xMidYMid meet"
-          @click="handleCanvasClick"
-        >
-          <g
-            v-for="zone in zonesForFloor"
-            :key="zone.id"
-            class="floor-zone-group"
-            @click.stop="handleZoneClick(zone)"
-          >
-            <polygon
-              class="floor-zone"
-              :class="zoneCssClass(zone)"
-              :points="zonePolygonPoints(zone)"
-            />
-            <text
-              class="floor-zone-label"
-              :x="zoneLabelPosition(zone).x"
-              :y="zoneLabelPosition(zone).y"
-            >
-              {{ zone.name }}
-            </text>
-          </g>
-
-          <!-- Draft polygon preview while drawing a new zone -->
-          <polyline
-            v-if="drawingMode && draftPoints.length"
-            class="floor-zone draft-zone"
-            :points="draftPolygonPoints"
-          />
-                    <g v-if="drawingMode">
-            <circle
-              v-for="(pt, idx) in draftPoints"
-              :key="idx"
-              class="draft-point"
-              :cx="pt.x"
-              :cy="pt.y"
-              r="6"
-            />
-          </g>
-        </svg>
-
-        <div
-          v-if="!zonesForFloor.length && !draftPoints.length"
-          class="no-zones"
-        >
-          <p>No zones defined for this floor yet.</p>
+      <div class="zone-list-header">
+        <h3>Zones on this floor</h3>
+        <button type="button" class="btn-secondary" @click="openAddZone">
+          + Add zone
+        </button>
+      </div>
+      <div v-if="drawingMode" class="drawing-hint">
+        <p>
+          Click on the map to add corners for the new zone.
+        </p>
+        <div class="drawing-actions">
+          <button type="button" class="btn-secondary" @click="finishDrawing">
+            Finish polygon
+          </button>
+          <button type="button" class="btn-secondary" @click="cancelDrawing">
+            Cancel
+          </button>
         </div>
       </div>
+      <ul v-if="zonesForFloor.length" class="zone-list">
+        <li
+          v-for="zone in zonesForFloor"
+          :key="zone.id"
+          :class="[
+            'zone-list-item',
+            { active: selectedZone && selectedZone.id === zone.id }
+          ]"
+          @click="handleZoneClick(zone)"
+        >
+          <div class="zone-list-name">{{ zone.name }}</div>
+          <div class="zone-list-meta">
+            Floor: {{ floorLabel(zone.floorId) }}
+            <span v-if="zone.zoneType">
+              •
+              {{
+                zone.zoneType === 'work_center'
+                  ? 'Work Center'
+                  : zone.zoneType === 'department'
+                  ? 'Department'
+                  : zone.zoneType
+              }}
+            </span>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="zone-list-empty">
+        No zones defined for this floor yet.
+      </p>
     </section>
         <Modal v-if="showZoneModal" @cancel="closeZoneModal">
       <template #title>New zone</template>
@@ -408,6 +424,19 @@ const router = useRouter();
 
 const floors = ref<Floor[]>([]);
 const floorZones = ref<FloorZone[]>([]);
+
+const floorNameLookup = computed(() => {
+  const map = new Map<number, string>();
+  for (const f of floors.value) {
+    map.set(f.id, f.name);
+  }
+  return map;
+});
+
+function floorLabel(floorId: number | null): string {
+  if (floorId == null) return "—";
+  return floorNameLookup.value.get(floorId) ?? `Floor ${floorId}`;
+}
 const selectedFloorId = ref<number | null>(null);
 const highlightedWorkCenterId = ref<number | null>(null);
 const highlightedDepartmentId = ref<number | null>(null);
@@ -447,6 +476,26 @@ const selectedFloor = computed(() =>
 const zonesForFloor = computed(() =>
   floorZones.value.filter((z) => z.floorId === selectedFloorId.value)
 );
+
+const sortedZonesForFloor = computed(() => {
+  const zones = zonesForFloor.value.slice();
+  zones.sort((a, b) => zoneDrawOrder(a) - zoneDrawOrder(b));
+  return zones;
+});
+
+const zoneStatsForFloor = computed(() => {
+  const zones = zonesForFloor.value;
+  const total = zones.length;
+  let wc = 0;
+  let dept = 0;
+
+  for (const z of zones) {
+    if (z.workCenterId != null) wc += 1;
+    if (z.departmentId != null) dept += 1;
+  }
+
+  return { total, wc, dept };
+});
 
 const draftPolygonPoints = computed(() =>
   draftPoints.value
@@ -649,6 +698,14 @@ function zoneCssClass(zone: FloorZone): string {
   return "zone-other";
 }
 
+function zoneDrawOrder(zone: FloorZone): number {
+  const t = zone.zoneType || "";
+  if (t === "department") return 0; // draw first, behind others
+  if (t === "other") return 1;
+  if (t === "work_center") return 2;
+  return 1;
+}
+
 function handleZoneClick(zone: FloorZone) {
   if (drawingMode.value) return;
   selectedZone.value = zone;
@@ -840,8 +897,15 @@ async function saveZone() {
     let departmentId = zoneForm.value.departmentId ?? null;
     let workCenterId = zoneForm.value.workCenterId ?? null;
 
-    // For "other" zones, keep them non-interactive by clearing links
-    if (normalizedZoneType === "other") {
+    // Enforce that each zone type links appropriately:
+    // - work_center: only workCenterId
+    // - department: only departmentId
+    // - other: no links
+    if (normalizedZoneType === "work_center") {
+      departmentId = null;
+    } else if (normalizedZoneType === "department") {
+      workCenterId = null;
+    } else if (normalizedZoneType === "other") {
       departmentId = null;
       workCenterId = null;
     }
@@ -946,10 +1010,28 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
+
 .floor-map-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.floor-map-layout {
   display: flex;
   gap: 1.5rem;
   align-items: stretch;
+}
+
+.floor-summary {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.floor-summary-text {
+  margin: 0;
 }
 
 .floor-map-legend {
@@ -1201,7 +1283,7 @@ onMounted(() => {
   background-image:
     linear-gradient(to right, #e5e7eb 1px, transparent 1px),
     linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size:25px 25px;
 }
 
 .floor-zone-group {
@@ -1260,5 +1342,9 @@ onMounted(() => {
 .zone-highlight {
   stroke-width: 3;
   fill-opacity: 0.75;
+}
+
+.floor-map-zones {
+  margin-top: 0.75rem;
 }
 </style>

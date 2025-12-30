@@ -63,7 +63,12 @@
                   </span>
                 </div>
               </div>
-              <router-link class="row-cta" to="/parts">Open</router-link>
+              <router-link
+                class="row-cta"
+                :to="{ name: 'part-detail', params: { id: p.id } }"
+              >
+                View part
+              </router-link>
             </div>
           </template>
         </div>

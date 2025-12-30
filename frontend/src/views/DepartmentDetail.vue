@@ -107,7 +107,7 @@
               </span>
             </div>
             <div class="row-sub">
-              Floor {{ zone.floorId }} • Type:
+              Floor: {{ floorLabel(zone.floorId) }} • Type:
               {{ zone.zoneType || "—" }}
             </div>
           </li>
@@ -141,6 +141,12 @@ type Part = {
   departmentId: number;
 };
 
+type Floor = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
 type FloorZone = {
   id: number;
   floorId: number;
@@ -163,6 +169,7 @@ const department = ref<Department | null>(null);
 const workCenters = ref<WorkCenter[]>([]);
 const parts = ref<Part[]>([]);
 const floorZones = ref<FloorZone[]>([]);
+const floors = ref<Floor[]>([]);
 
 const workCentersForDepartment = computed(() =>
   workCenters.value.filter((wc) => wc.departmentId === departmentId)
@@ -175,6 +182,18 @@ const partsForDepartment = computed(() =>
 const floorZonesForDepartment = computed(() =>
   floorZones.value.filter((z) => z.departmentId === departmentId)
 );
+
+const floorNameLookup = computed(() => {
+  const map = new Map<number, string>();
+  for (const f of floors.value) {
+    map.set(f.id, f.name);
+  }
+  return map;
+});
+
+function floorLabel(floorId: number): string {
+  return floorNameLookup.value.get(floorId) ?? `Floor ${floorId}`;
+}
 
 function goBack() {
   router.push({ name: "departments" });
@@ -204,6 +223,11 @@ async function loadData() {
         title
         description
       }
+      floors {
+        id
+        name
+        description
+      }
       workCenters {
         id
         name
@@ -230,6 +254,7 @@ async function loadData() {
   try {
     type Response = {
       department: Department;
+      floors: Floor[];
       workCenters: WorkCenter[];
       parts: Part[];
       floorZones: FloorZone[];
@@ -237,6 +262,7 @@ async function loadData() {
 
     const data = await fetchGraphQL<Response>(query, { id: departmentId });
     department.value = data.department ?? null;
+    floors.value = data.floors ?? [];
     workCenters.value = data.workCenters ?? [];
     parts.value = data.parts ?? [];
     floorZones.value = data.floorZones ?? [];
