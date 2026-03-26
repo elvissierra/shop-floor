@@ -301,6 +301,8 @@ class Mutation:
             sequence=op.sequence,
             work_center_id=op.work_center_id,
             status=op.status,
+            started_at=op.started_at.isoformat() if op.started_at else None,
+            completed_at=op.completed_at.isoformat() if op.completed_at else None,
         )
 
     @strawberry.mutation
@@ -347,6 +349,118 @@ class Mutation:
             component_part_id=i.component_part_id,
             quantity=i.quantity,
         )
+
+    # ---- WorkCenter CRUD ----
+    @strawberry.mutation
+    def update_work_center(self, id: int, data: WorkCenterInput, info) -> WorkCenterType:
+        db: Session = info.context["db"]
+        wc = MutationService(db).update_work_center(id, data)
+        return WorkCenterType(id=wc.id, name=wc.name, code=wc.code, department_id=wc.department_id)
+
+    @strawberry.mutation
+    def delete_work_center(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_work_center(id)
+
+    # ---- WorkOrder CRUD ----
+    @strawberry.mutation
+    def update_work_order(self, id: int, data: WorkOrderInput, info) -> WorkOrderType:
+        db: Session = info.context["db"]
+        wo = MutationService(db).update_work_order(id, data)
+        return WorkOrderType(
+            id=wo.id,
+            number=wo.number,
+            status=wo.status,
+            quantity=wo.quantity,
+            part_id=wo.part_id,
+            department_id=wo.department_id,
+            work_center_id=wo.work_center_id,
+        )
+
+    @strawberry.mutation
+    def delete_work_order(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_work_order(id)
+
+    # ---- WorkOrderOp CRUD ----
+    @strawberry.mutation
+    def update_work_order_op(self, id: int, data: WorkOrderOpInput, info) -> WorkOrderOpType:
+        db: Session = info.context["db"]
+        op = MutationService(db).update_work_order_op(id, data)
+        return WorkOrderOpType(
+            id=op.id,
+            work_order_id=op.work_order_id,
+            sequence=op.sequence,
+            work_center_id=op.work_center_id,
+            status=op.status,
+            started_at=op.started_at.isoformat() if op.started_at else None,
+            completed_at=op.completed_at.isoformat() if op.completed_at else None,
+        )
+
+    @strawberry.mutation
+    def delete_work_order_op(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_work_order_op(id)
+
+    # ---- Routing CRUD ----
+    @strawberry.mutation
+    def update_routing(self, id: int, data: RoutingInput, info) -> RoutingType:
+        db: Session = info.context["db"]
+        r = MutationService(db).update_routing(id, data)
+        return RoutingType(id=r.id, name=r.name, part_id=r.part_id, version=r.version)
+
+    @strawberry.mutation
+    def delete_routing(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_routing(id)
+
+    # ---- RoutingStep CRUD ----
+    @strawberry.mutation
+    def update_routing_step(self, id: int, data: RoutingStepInput, info) -> RoutingStepType:
+        db: Session = info.context["db"]
+        s = MutationService(db).update_routing_step(id, data)
+        return RoutingStepType(
+            id=s.id,
+            routing_id=s.routing_id,
+            sequence=s.sequence,
+            work_center_id=s.work_center_id,
+            description=s.description,
+            standard_minutes=s.standard_minutes,
+        )
+
+    @strawberry.mutation
+    def delete_routing_step(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_routing_step(id)
+
+    # ---- BOM CRUD ----
+    @strawberry.mutation
+    def update_bom(self, id: int, data: BOMInput, info) -> BOMType:
+        db: Session = info.context["db"]
+        b = MutationService(db).update_bom(id, data)
+        return BOMType(id=b.id, part_id=b.part_id, revision=b.revision)
+
+    @strawberry.mutation
+    def delete_bom(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_bom(id)
+
+    # ---- BOMItem CRUD ----
+    @strawberry.mutation
+    def update_bom_item(self, id: int, data: BOMItemInput, info) -> BOMItemType:
+        db: Session = info.context["db"]
+        i = MutationService(db).update_bom_item(id, data)
+        return BOMItemType(
+            id=i.id,
+            bom_id=i.bom_id,
+            component_part_id=i.component_part_id,
+            quantity=i.quantity,
+        )
+
+    @strawberry.mutation
+    def delete_bom_item(self, id: int, info) -> bool:
+        db: Session = info.context["db"]
+        return MutationService(db).delete_bom_item(id)
 
     @strawberry.mutation
     def add_activity_log(self, data: ActivityLogInput, info) -> ActivityLogType:
@@ -586,6 +700,8 @@ class Query:
                 sequence=op.sequence,
                 work_center_id=op.work_center_id,
                 status=op.status,
+                started_at=op.started_at.isoformat() if op.started_at else None,
+                completed_at=op.completed_at.isoformat() if op.completed_at else None,
             )
             for op in ops
         ]

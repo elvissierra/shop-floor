@@ -24,7 +24,7 @@ class FloorZoneType:
 class DepartmentType:
     id: int
     title: str
-    description: str
+    description: Optional[str] = None
 
 
 @strawberry.type
@@ -93,6 +93,8 @@ class WorkOrderOpType:
     sequence: int
     work_center_id: Optional[int]
     status: str
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
 
 
 @strawberry.type
@@ -143,7 +145,7 @@ class ActivityLogType:
 @strawberry.input
 class DepartmentInput:
     title: str
-    description: str
+    description: Optional[str] = None
 
 
 @strawberry.input
@@ -204,6 +206,8 @@ class WorkOrderOpInput:
     sequence: int
     work_center_id: Optional[int] = None
     status: str = "pending"
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
 
 
 @strawberry.input

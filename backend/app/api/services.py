@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from sqlalchemy.orm import Session
 from models.models import (
     User,
@@ -331,11 +332,18 @@ class WorkOrderOpRepo:
             .all()
         )
 
+    def get(self, op_id: int) -> WorkOrderOp | None:
+        return self.db.get(WorkOrderOp, op_id)
+
     def create(self, op: WorkOrderOp) -> WorkOrderOp:
         self.db.add(op)
         self.db.commit()
         self.db.refresh(op)
         return op
+
+    def delete(self, op: WorkOrderOp) -> None:
+        self.db.delete(op)
+        self.db.commit()
 
 
 class RoutingRepo:
@@ -357,6 +365,10 @@ class RoutingRepo:
         self.db.refresh(routing)
         return routing
 
+    def delete(self, routing: Routing) -> None:
+        self.db.delete(routing)
+        self.db.commit()
+
 
 class RoutingStepRepo:
     def __init__(self, db: Session):
@@ -376,11 +388,18 @@ class RoutingStepRepo:
             .all()
         )
 
+    def get(self, step_id: int) -> RoutingStep | None:
+        return self.db.get(RoutingStep, step_id)
+
     def create(self, step: RoutingStep) -> RoutingStep:
         self.db.add(step)
         self.db.commit()
         self.db.refresh(step)
         return step
+
+    def delete(self, step: RoutingStep) -> None:
+        self.db.delete(step)
+        self.db.commit()
 
 
 class BOMRepo:
@@ -400,6 +419,10 @@ class BOMRepo:
         self.db.refresh(bom)
         return bom
 
+    def delete(self, bom: BOM) -> None:
+        self.db.delete(bom)
+        self.db.commit()
+
 
 class BOMItemRepo:
     def __init__(self, db: Session):
@@ -414,11 +437,18 @@ class BOMItemRepo:
     def list_by_bom(self, bom_id: int) -> list[BOMItem]:
         return self.db.query(BOMItem).filter(BOMItem.bom_id == bom_id).all()
 
+    def get(self, item_id: int) -> BOMItem | None:
+        return self.db.get(BOMItem, item_id)
+
     def create(self, item: BOMItem) -> BOMItem:
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
         return item
+
+    def delete(self, item: BOMItem) -> None:
+        self.db.delete(item)
+        self.db.commit()
 
 
 class ActivityLogRepo:
@@ -852,6 +882,46 @@ class MutationService:
         self.db.commit()
         return True
 
+    # ---- WorkCenter: update & delete ----
+    def update_work_center(self, work_center_id: int, data: WorkCenterInput) -> WorkCenter:
+        wc = self.db.get(WorkCenter, work_center_id)
+        if not wc:
+            raise GraphQLError(
+                f"Work center {work_center_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        if data.code and data.code != wc.code:
+            exists = self.db.query(WorkCenter).filter(WorkCenter.code == data.code).first()
+            if exists:
+                raise GraphQLError(
+                    "Work center code already exists; check code.",
+                    extensions={"code": "CONFLICT"},
+                )
+        if data.department_id is not None:
+            dept = self.db.get(Department, data.department_id)
+            if not dept:
+                raise GraphQLError(
+                    f"Department {data.department_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+        wc.name = data.name
+        wc.code = data.code
+        wc.department_id = data.department_id
+        self.db.commit()
+        self.db.refresh(wc)
+        return wc
+
+    def delete_work_center(self, work_center_id: int) -> bool:
+        wc = self.db.get(WorkCenter, work_center_id)
+        if not wc:
+            raise GraphQLError(
+                f"Work center {work_center_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(wc)
+        self.db.commit()
+        return True
+
     def add_work_center(self, data: WorkCenterInput) -> WorkCenter:
         # Optional uniqueness check on code to avoid DB integrity errors
         if data.code:
@@ -883,6 +953,55 @@ class MutationService:
         self.db.commit()
         self.db.refresh(wc)
         return wc
+
+    # ---- WorkOrder: update & delete ----
+    def update_work_order(self, work_order_id: int, data: WorkOrderInput) -> WorkOrder:
+        wo = self.db.get(WorkOrder, work_order_id)
+        if not wo:
+            raise GraphQLError(
+                f"Work order {work_order_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        if data.number and data.number != wo.number:
+            exists = self.db.query(WorkOrder).filter(WorkOrder.number == data.number).first()
+            if exists:
+                raise GraphQLError(
+                    "Work order already exists; check number.",
+                    extensions={"code": "CONFLICT"},
+                )
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        if data.work_center_id is not None:
+            wc = self.db.get(WorkCenter, data.work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {data.work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+        wo.number = data.number
+        wo.status = data.status
+        wo.quantity = data.quantity
+        wo.part_id = data.part_id
+        wo.department_id = data.department_id if data.department_id is not None else part.department_id
+        wo.work_center_id = data.work_center_id
+        self.db.commit()
+        self.db.refresh(wo)
+        return wo
+
+    def delete_work_order(self, work_order_id: int) -> bool:
+        wo = self.db.get(WorkOrder, work_order_id)
+        if not wo:
+            raise GraphQLError(
+                f"Work order {work_order_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(wo)
+        self.db.commit()
+        return True
 
     def add_work_order(self, data: WorkOrderInput) -> WorkOrder:
         # Enforce unique work order number at the service layer
@@ -929,6 +1048,41 @@ class MutationService:
         self.db.refresh(wo)
         return wo
 
+    # ---- WorkOrderOp: update & delete ----
+    def update_work_order_op(self, op_id: int, data: WorkOrderOpInput) -> WorkOrderOp:
+        op = self.db.get(WorkOrderOp, op_id)
+        if not op:
+            raise GraphQLError(
+                f"Work order op {op_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        if data.work_center_id is not None:
+            wc = self.db.get(WorkCenter, data.work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {data.work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+        op.sequence = data.sequence
+        op.work_center_id = data.work_center_id
+        op.status = data.status
+        op.started_at = datetime.fromisoformat(data.started_at) if data.started_at else None
+        op.completed_at = datetime.fromisoformat(data.completed_at) if data.completed_at else None
+        self.db.commit()
+        self.db.refresh(op)
+        return op
+
+    def delete_work_order_op(self, op_id: int) -> bool:
+        op = self.db.get(WorkOrderOp, op_id)
+        if not op:
+            raise GraphQLError(
+                f"Work order op {op_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(op)
+        self.db.commit()
+        return True
+
     def add_work_order_op(self, data: WorkOrderOpInput) -> WorkOrderOp:
         wo = self.db.get(WorkOrder, data.work_order_id)
         if not wo:
@@ -951,11 +1105,45 @@ class MutationService:
             sequence=data.sequence,
             work_center_id=work_center_id,
             status=data.status,
+            started_at=datetime.fromisoformat(data.started_at) if data.started_at else None,
+            completed_at=datetime.fromisoformat(data.completed_at) if data.completed_at else None,
         )
         self.db.add(op)
         self.db.commit()
         self.db.refresh(op)
         return op
+
+    # ---- Routing: update & delete ----
+    def update_routing(self, routing_id: int, data: RoutingInput) -> Routing:
+        routing = self.db.get(Routing, routing_id)
+        if not routing:
+            raise GraphQLError(
+                f"Routing {routing_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        routing.name = data.name
+        routing.part_id = data.part_id
+        routing.version = data.version
+        self.db.commit()
+        self.db.refresh(routing)
+        return routing
+
+    def delete_routing(self, routing_id: int) -> bool:
+        routing = self.db.get(Routing, routing_id)
+        if not routing:
+            raise GraphQLError(
+                f"Routing {routing_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(routing)
+        self.db.commit()
+        return True
 
     def add_routing(self, data: RoutingInput) -> Routing:
         part = self.db.get(Part, data.part_id)
@@ -974,6 +1162,40 @@ class MutationService:
         self.db.commit()
         self.db.refresh(routing)
         return routing
+
+    # ---- RoutingStep: update & delete ----
+    def update_routing_step(self, step_id: int, data: RoutingStepInput) -> RoutingStep:
+        step = self.db.get(RoutingStep, step_id)
+        if not step:
+            raise GraphQLError(
+                f"Routing step {step_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        if data.work_center_id is not None:
+            wc = self.db.get(WorkCenter, data.work_center_id)
+            if not wc:
+                raise GraphQLError(
+                    f"Work center {data.work_center_id} not found",
+                    extensions={"code": "NOT_FOUND"},
+                )
+        step.sequence = data.sequence
+        step.work_center_id = data.work_center_id
+        step.description = data.description
+        step.standard_minutes = data.standard_minutes
+        self.db.commit()
+        self.db.refresh(step)
+        return step
+
+    def delete_routing_step(self, step_id: int) -> bool:
+        step = self.db.get(RoutingStep, step_id)
+        if not step:
+            raise GraphQLError(
+                f"Routing step {step_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(step)
+        self.db.commit()
+        return True
 
     def add_routing_step(self, data: RoutingStepInput) -> RoutingStep:
         routing = self.db.get(Routing, data.routing_id)
@@ -1004,6 +1226,37 @@ class MutationService:
         self.db.refresh(step)
         return step
 
+    # ---- BOM: update & delete ----
+    def update_bom(self, bom_id: int, data: BOMInput) -> BOM:
+        bom = self.db.get(BOM, bom_id)
+        if not bom:
+            raise GraphQLError(
+                f"BOM {bom_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        part = self.db.get(Part, data.part_id)
+        if not part:
+            raise GraphQLError(
+                f"Part {data.part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        bom.part_id = data.part_id
+        bom.revision = data.revision
+        self.db.commit()
+        self.db.refresh(bom)
+        return bom
+
+    def delete_bom(self, bom_id: int) -> bool:
+        bom = self.db.get(BOM, bom_id)
+        if not bom:
+            raise GraphQLError(
+                f"BOM {bom_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(bom)
+        self.db.commit()
+        return True
+
     def add_bom(self, data: BOMInput) -> BOM:
         part = self.db.get(Part, data.part_id)
         if not part:
@@ -1020,6 +1273,37 @@ class MutationService:
         self.db.commit()
         self.db.refresh(bom)
         return bom
+
+    # ---- BOMItem: update & delete ----
+    def update_bom_item(self, item_id: int, data: BOMItemInput) -> BOMItem:
+        item = self.db.get(BOMItem, item_id)
+        if not item:
+            raise GraphQLError(
+                f"BOM item {item_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        component_part = self.db.get(Part, data.component_part_id)
+        if not component_part:
+            raise GraphQLError(
+                f"Part {data.component_part_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        item.component_part_id = data.component_part_id
+        item.quantity = data.quantity
+        self.db.commit()
+        self.db.refresh(item)
+        return item
+
+    def delete_bom_item(self, item_id: int) -> bool:
+        item = self.db.get(BOMItem, item_id)
+        if not item:
+            raise GraphQLError(
+                f"BOM item {item_id} not found",
+                extensions={"code": "NOT_FOUND"},
+            )
+        self.db.delete(item)
+        self.db.commit()
+        return True
 
     def add_bom_item(self, data: BOMItemInput) -> BOMItem:
         bom = self.db.get(BOM, data.bom_id)

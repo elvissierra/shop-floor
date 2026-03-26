@@ -24,19 +24,6 @@ export const useShopFloorStore = defineStore('shopFloor', {
       }
     },
     
-    async updateShopFloorData(data) {
-      this.loading = true;
-      try {
-        const updatedData = await shopFloorService.updateShopFloorData(data);
-        this.shopFloorData = updatedData;
-        this.error = null;
-      } catch (err) {
-        this.error = err.message;
-      } finally {
-        this.loading = false;
-      }
-    },
-
     // Department methods
     async fetchDepartments(params = {}) {
       this.loading = true;
@@ -82,7 +69,7 @@ export const useShopFloorStore = defineStore('shopFloor', {
     async addWorkCenter(wcData) {
       this.loading = true;
       try {
-        const response = await shopFloorService.addWorkCenter(wcData);
+        const response = await shopFloorService.createWorkCenter(wcData);
         this.error = null;
         return response;
       } catch (err) {
@@ -111,7 +98,21 @@ export const useShopFloorStore = defineStore('shopFloor', {
     async addPart(partData) {
       this.loading = true;
       try {
-        const response = await shopFloorService.addPart(partData);
+        const response = await shopFloorService.createPart(partData);
+        this.error = null;
+        return response;
+      } catch (err) {
+        this.error = err.message;
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updatePart(id, partData) {
+      this.loading = true;
+      try {
+        const response = await shopFloorService.updatePart(id, partData);
         this.error = null;
         return response;
       } catch (err) {
