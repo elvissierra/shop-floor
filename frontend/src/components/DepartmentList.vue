@@ -70,17 +70,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import PageHeader from './PageHeader.vue'
-import { useShopFloorStore } from '../stores/shopFloor';
 import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
 import DepartmentForm from './DepartmentForm.vue'
-import { shopFloorService } from '../services/api'
-// Inside DepartmentList.vue <script setup>
+import { fetchGraphQL } from '../services/graphql'
 import { useRouter } from "vue-router";
 const router = useRouter();
 
 const { push: toast } = useToast()
-const store = useShopFloorStore();
 const departments = ref([]);
 const loading = ref(true);
 const error = ref(null);
@@ -131,12 +128,22 @@ async function saveDepartment() {
   try {
     submitting.value = true
     if (editing.value && selectedId.value != null) {
-      const updated = await shopFloorService.updateDepartment(selectedId.value, form.value)
+      const res = await fetchGraphQL(`
+        mutation UpdateDepartment($id: Int!, $data: DepartmentInput!) {
+          updateDepartment(id: $id, data: $data) { id title description }
+        }
+      `, { id: selectedId.value, data: form.value })
+      const updated = res.updateDepartment
       const idx = departments.value.findIndex(d => d.id === selectedId.value)
       if (idx !== -1) departments.value[idx] = updated
       toast({ type: 'success', title: 'Department updated', message: updated.title })
     } else {
-      const created = await shopFloorService.createDepartment(form.value)
+      const res = await fetchGraphQL(`
+        mutation CreateDepartment($data: DepartmentInput!) {
+          addDepartment(data: $data) { id title description }
+        }
+      `, { data: form.value })
+      const created = res.addDepartment
       departments.value.unshift(created)
       toast({ type: 'success', title: 'Department created', message: created.title })
     }
@@ -160,7 +167,12 @@ async function loadBatch(reset = false) {
     moreAvailable.value = true;
   }
   try {
-    const batch = await store.fetchDepartments({ limit: limit.value, offset: offset.value });
+    const res = await fetchGraphQL(`
+      query GetDepartments($limit: Int, $offset: Int) {
+        departments(limit: $limit, offset: $offset) { id title description }
+      }
+    `, { limit: limit.value, offset: offset.value });
+    const batch = res.departments;
     if (!batch || batch.length === 0) {
       moreAvailable.value = false;
       return;
@@ -181,7 +193,11 @@ const editDepartment = (dept) => openEdit(dept)
 const deleteDepartment = async (id) => {
   if (confirm('Are you sure you want to delete this department?')) {
     try {
-      await store.deleteDepartment(id);
+      await fetchGraphQL(`
+        mutation DeleteDepartment($id: Int!) {
+          deleteDepartment(id: $id)
+        }
+      `, { id });
       departments.value = departments.value.filter(d => d.id !== id);
       toast({ type: 'success', title: 'Department deleted', message: 'The department was removed.' })
     } catch (err) {

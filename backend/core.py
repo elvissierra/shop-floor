@@ -101,10 +101,10 @@ class Mutation:
         return MutationService(db).delete_floor_zone(id)
 
     @strawberry.mutation
-    def add_user(self, user_data: UserInput, info) -> UserType:
+    def add_user(self, data: UserInput, info) -> UserType:
         db = info.context.get("db")
         service = MutationService(db)
-        user = service.add_user(user_data)
+        user = service.add_user(data)
         return UserType(
             id=user.id,
             username=user.username,
@@ -114,10 +114,10 @@ class Mutation:
         )
 
     @strawberry.mutation
-    def add_department(self, department_data: DepartmentInput, info) -> DepartmentType:
+    def add_department(self, data: DepartmentInput, info) -> DepartmentType:
         db = info.context.get("db")
         service = MutationService(db)
-        department = service.add_department(department_data)
+        department = service.add_department(data)
         return DepartmentType(
             id=department.id,
             title=department.title,
@@ -136,10 +136,10 @@ class Mutation:
         return MutationService(db).delete_department(id)
 
     @strawberry.mutation
-    def add_part(self, part_data: PartInput, info) -> PartType:
+    def add_part(self, data: PartInput, info) -> PartType:
         db = info.context.get("db")
         service = MutationService(db)
-        part = service.add_part(part_data)
+        part = service.add_part(data)
         return PartType(
             id=part.id,
             name=part.name,
@@ -148,11 +148,11 @@ class Mutation:
 
     @strawberry.mutation
     def add_defect_category(
-        self, def_cat_data: DefectCategoryInput, info
+        self, data: DefectCategoryInput, info
     ) -> DefectCategoryType:
         db = info.context.get("db")
         service = MutationService(db)
-        defect_category = service.add_defect_category(def_cat_data)
+        defect_category = service.add_defect_category(data)
         return DefectCategoryType(
             id=defect_category.id,
             title=defect_category.title,
@@ -160,10 +160,10 @@ class Mutation:
         )
 
     @strawberry.mutation
-    def add_defect(self, defect_data: DefectInput, info) -> DefectType:
+    def add_defect(self, data: DefectInput, info) -> DefectType:
         db = info.context.get("db")
         service = MutationService(db)
-        defect = service.add_defect(defect_data)
+        defect = service.add_defect(data)
         return DefectType(
             id=defect.id,
             title=defect.title,
@@ -173,10 +173,10 @@ class Mutation:
         )
 
     @strawberry.mutation
-    def add_quality(self, quality_data: QualityInput, info) -> QualityType:
+    def add_quality(self, data: QualityInput, info) -> QualityType:
         db = info.context.get("db")
         service = MutationService(db)
-        quality = service.add_quality(quality_data)
+        quality = service.add_quality(data)
         return QualityType(
             id=quality.id,
             pass_fail=quality.pass_fail,

@@ -88,13 +88,12 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useShopFloorStore } from '../stores/shopFloor';
+import { fetchGraphQL } from '../services/graphql'
 import { useToast } from '../composables/useToast'
 import Modal from './Modal.vue'
 import PageHeader from './PageHeader.vue'
 
 const { push: toast } = useToast()
-const store = useShopFloorStore();
 const parts = ref([]);
 const loading = ref(true);
 const error = ref(null);
@@ -142,12 +141,22 @@ async function savePart() {
   try {
     submitting.value = true
     if (editing.value && selectedId.value != null) {
-      const updated = await store.updatePart(selectedId.value, form.value)
+      const res = await fetchGraphQL(`
+        mutation UpdatePart($id: Int!, $data: PartInput!) {
+          updatePart(id: $id, data: $data) { id name departmentId }
+        }
+      `, { id: selectedId.value, data: form.value })
+      const updated = res.updatePart
       const idx = parts.value.findIndex(p => p.id === selectedId.value)
       if (idx !== -1) parts.value[idx] = updated
       toast({ type: 'success', title: 'Part updated', message: updated.name })
     } else {
-      const created = await store.addPart(form.value)
+      const res = await fetchGraphQL(`
+        mutation CreatePart($data: PartInput!) {
+          addPart(data: $data) { id name departmentId }
+        }
+      `, { data: form.value })
+      const created = res.addPart
       parts.value.unshift(created)
       toast({ type: 'success', title: 'Part created', message: created.name })
     }
@@ -167,7 +176,12 @@ async function loadBatch(reset = false) {
     moreAvailable.value = true;
   }
   try {
-    const batch = await store.fetchParts({ limit: limit.value, offset: offset.value });
+    const res = await fetchGraphQL(`
+      query GetParts($limit: Int, $offset: Int) {
+        parts(limit: $limit, offset: $offset) { id name departmentId }
+      }
+    `, { limit: limit.value, offset: offset.value });
+    const batch = res.parts;
     if (!batch || batch.length === 0) {
       moreAvailable.value = false;
       return;
@@ -185,7 +199,10 @@ async function loadBatch(reset = false) {
 onMounted(async () => {
   await loadBatch(true);
   try {
-    departmentOptions.value = await store.fetchDepartments({ limit: 100 });
+    const res = await fetchGraphQL(`
+      query GetDepartments { departments { id title } }
+    `);
+    departmentOptions.value = res.departments;
   } catch (e) {
     // ignore; parts page still works without options
   }

@@ -171,10 +171,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useShopFloorStore } from '../stores/shopFloor'
-import { ref } from 'vue'
-import { shopFloorService } from '../services/api'
+import { fetchGraphQL } from '../services/graphql'
 
 
 const store = useShopFloorStore()
@@ -224,7 +223,12 @@ const loadingLatest = ref(false)
 onMounted(async () => {
   loadingLatest.value = true
   try {
-    latestParts.value = await shopFloorService.getParts({ limit: 5, offset: 0 })
+    const res = await fetchGraphQL(`
+      query LatestParts($limit: Int, $offset: Int) {
+        parts(limit: $limit, offset: $offset) { id name departmentId }
+      }
+    `, { limit: 5, offset: 0 })
+    latestParts.value = res.parts
   } finally {
     loadingLatest.value = false
   }

@@ -14,13 +14,13 @@ View lifecycle (onMounted) triggers store actions
 Pinia store (shopFloor.js) runs actions
    │
    ▼
-services/api.js sends GraphQL POSTs to /graphql
+services/graphql.ts sends GraphQL POSTs to /graphql
    │
    ▼
-Backend resolvers return JSON → store updates state → view re-renders
+Backend resolvers return JSON → view re-renders
 # Frontend ↔ Backend Workflow (Vue/Vite + Pinia + GraphQL)
 
-This app uses **Vue 3 + Vite** on the frontend and a **GraphQL** backend at `/graphql`. The service layer (`src/services/api.js`) posts GraphQL queries with `fetch` (no extra deps).
+This app uses **Vue 3 + Vite** on the frontend and a **GraphQL** backend at `/graphql`. The service layer (`src/services/graphql.ts`) posts GraphQL queries with `fetch` (no extra deps).
 
 ## High‑level picture
 ```
@@ -30,16 +30,13 @@ Browser (user)
 Vue Router → loads a View (.vue page)
    │
    ▼
-View lifecycle (onMounted) triggers store actions
+View lifecycle (onMounted) calls fetchGraphQL() directly
    │
    ▼
-Pinia store (shopFloor.js) runs actions
+services/graphql.ts sends GraphQL POSTs to /graphql
    │
    ▼
-services/api.js sends GraphQL POSTs to /graphql
-   │
-   ▼
-Backend resolvers return JSON → store updates state → view re-renders
+Backend resolvers return JSON → view re-renders
 ```
 
 ## Key files & purpose
@@ -47,8 +44,8 @@ Backend resolvers return JSON → store updates state → view re-renders
 - `src/views/ShopFloorView.vue` – Dashboard; on mount calls `store.fetchShopFloorData()` (combined departments + parts for now).
 - `src/components/DepartmentList.vue` – Lists departments; supports delete.
 - `src/components/PartList.vue` – Lists parts.
-- `src/stores/shopFloor.js` – Pinia store (central state, actions, loading/error handling) that calls the service layer.
-- `src/services/api.js` – **GraphQL service** using `fetch` to `/graphql`; maps GraphQL camelCase fields (e.g., `departmentId`) to the UI’s snake_case (`department_id`) where needed.
+- `src/stores/shopFloor.js` – Pinia store (shared dashboard state only).
+- `src/services/graphql.ts` – **GraphQL service** using `fetch` to `/graphql`; all views call `fetchGraphQL()` directly.
 
 ## Lifecycle snapshots (order of events)
 
@@ -76,7 +73,7 @@ Backend resolvers return JSON → store updates state → view re-renders
 - **Frontend:** set the backend URL (optional). Defaults to `http://localhost:8000/graphql`.
   ```env
   # frontend/.env.development
-  VITE_API_URL=http://localhost:8000/graphql
+  VITE_GRAPHQL_URL=http://localhost:8000/graphql
   ```
 - **Backend (reference):** `backend/main.py` serves GraphQL at `/graphql` and enables CORS for `http://localhost:5173`.
 
@@ -114,7 +111,7 @@ Then visit `http://localhost:5173/`:
 
 2. Run both apps & sanity-check
    - Backend: uvicorn backend.main:app --reload --port 8000
-   - Frontend: npm run dev (with VITE_API_URL=http://localhost:8000/graphql)
+   - Frontend: npm run dev (with VITE_GRAPHQL_URL=http://localhost:8000/graphql)
    - Visit /, /departments, /parts, /shop-floor
 
 3. Wire basic create flows in the UI
@@ -122,7 +119,7 @@ Then visit `http://localhost:5173/`:
    - Add “Create Part” form → createPart mutation
 
 4. Stabilize environments
-   - Keep frontend VITE_API_URL in .env.*
+   - Keep frontend VITE_GRAPHQL_URL in .env.*
    - Backend .env: adjust host if Dockerized PG
 
 5. Lock CORS & ports

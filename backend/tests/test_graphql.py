@@ -1,7 +1,7 @@
 def test_add_and_fetch_departments(client):
     add_mutation = """
     mutation {
-      addDepartment(departmentData: {
+      addDepartment(data: {
         title: "HR",
         description: "Human Resources"
       }) {
