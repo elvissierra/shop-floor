@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');const f='.claude/auto-memory/dirty-files';const args=process.argv.slice(1);const current=fs.existsSync(f)?fs.readFileSync(f,'utf8').split('\\n').filter(Boolean):[];const updated=[...new Set([...current,...args])];fs.writeFileSync(f,updated.join('\\n')+'\\n');\" \"$CLAUDE_TOOL_INPUT_FILE_PATH\"",
+            "blocking": false
+          }
+        ]
+      }
+    ]
+  }
+}

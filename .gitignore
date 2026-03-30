@@ -3,3 +3,6 @@ __pycache__
 versions
 .local_remote
 claude.md
+
+# Claude Code auto-memory
+.claude/auto-memory/dirty-files
